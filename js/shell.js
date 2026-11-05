@@ -1,81 +1,86 @@
 /* ============================================================
-   Win98 shell: full-page app window, floating windows,
-   dialogs. No dependencies, works from file://
+   Wise shell: приложение — обычная страница (шапка + разделы),
+   всплывающие карточки по центру, плоские диалоги.
+   Без оконных рамок: нет заголовков с кнопками, перетаскивания,
+   разворачивания и часов в трее. Работает без зависимостей и с file://
    ============================================================ */
 window.Shell = (function () {
   const desk = () => document.getElementById('desktop');
-  let zTop = 10;
+  let zTop = 100;
   const wins = new Map();
-  let focused = null;
   let seq = 0;
 
   /* ---------- helpers ---------- */
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  // Знаки кнопок шапки рисуем геометрией, а не шрифтовой буквой: только так крестик
-  // становится крупным и стоит ровно по центру кнопки при любой неактивной расцветке
-  // (stroke="currentColor" наследует серый цвет неактивного окна).
-  const GLYPH = {
-    close: '<path d="M2 2 10 10M10 2 2 10"/>',
-    max: '<rect x="2" y="2" width="8" height="8" fill="none"/><path d="M2 4.4h8" stroke-width="2.6"/>',
-    restore: '<rect x="2" y="4" width="7" height="7" fill="none"/><path d="M4.5 2h7.5v7.5"/>'
-  };
-  const glyph = (kind) => '<svg width="14" height="14" viewBox="0 0 12 12" fill="none" ' +
-    'stroke="currentColor" stroke-width="1.8" stroke-linecap="square" focusable="false" aria-hidden="true">' +
-    GLYPH[kind] + '</svg>';
+  // Крестик рисуем геометрией, а не шрифтовой буквой: только так он стоит
+  // ровно по центру круглой кнопки.
+  const glyph = (kind) => '<svg width="16" height="16" viewBox="0 0 12 12" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" focusable="false" aria-hidden="true">' +
+    (kind === 'close' ? '<path d="M2 2 10 10M10 2 2 10"/>' : '') + '</svg>';
 
-  const clampPos = (x, y, w, h) => {
-    const d = desk().getBoundingClientRect();
-    return {
-      x: Math.max(0, Math.min(x, Math.max(0, d.width - w))),
-      y: Math.max(0, Math.min(y, Math.max(0, d.height - h)))
-    };
-  };
+  // Знак бренда — лист вместо оконной иконки: отсылка к зелёному акценту темы.
+  const LEAF = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+    '<path d="M12.8 3.1c-6.1.2-9.2 3-9.2 7.2 0 .9.1 1.6.1 1.6s5-.4 7.5-3.8c1.8-2.5 1.6-5 1.6-5z" fill="#0d2a06"/>' +
+    '<path d="M4.3 12.2c1.4-2.9 3.7-4.7 6-5.8" stroke="#bae79a" stroke-width="1.2" stroke-linecap="round"/></svg>';
+
+  const statusHtml = (text, text2) =>
+    '<span class="cell grow">' + esc(text) + '</span>' +
+    '<span class="cell" data-status2>' + esc(text2 || '') + '</span>';
+
+  /* ---------- сборка разметки ---------- */
+  // Главное окно (chrome:false) = страница: шапка с брендом и разделами,
+  // крупный заголовок раздела, содержимое, тонкая строка состояния внизу.
+  function buildApp(el, cfg) {
+    el.className = 'app';
+    el.dataset.id = cfg.id;
+    el.innerHTML =
+      '<header class="topbar">' +
+      '<span class="brand"><span class="b-dot">' + LEAF + '</span>Садовод-посредник</span>' +
+      (cfg.toolbar !== undefined ? '<nav class="toolbar" data-toolbar></nav>' : '') +
+      '</header>' +
+      '<div class="page-head"><span class="t-text">' + esc(cfg.title || '') + '</span></div>' +
+      '<main class="win-body" data-body></main>' +
+      (cfg.status !== false ? '<footer class="statusbar" data-status>' + statusHtml(cfg.status || 'Готово', cfg.status2) + '</footer>' : '');
+  }
+
+  // Всплывающее окно = карточка по центру затемнения.
+  function buildSheet(el, cfg) {
+    el.className = 'sheet';
+    el.dataset.id = cfg.id;
+    el.style.setProperty('--w', Math.min(cfg.w || 620, window.innerWidth - 48) + 'px');
+    el.innerHTML =
+      '<header class="sheet-head">' +
+      (cfg.icon ? '<span class="t-ico">' + ico(cfg.icon, 20) + '</span>' : '') +
+      '<span class="t-text">' + esc(cfg.title) + '</span>' +
+      '<button class="x" data-x aria-label="Закрыть">' + glyph('close') + '</button>' +
+      '</header>' +
+      (cfg.menu ? '<div class="menubar" data-menu></div>' : '') +
+      '<main class="win-body" data-body></main>' +
+      (cfg.status !== false ? '<footer class="statusbar" data-status>' + statusHtml(cfg.status || 'Готово', cfg.status2) + '</footer>' : '');
+  }
 
   /* ---------- window ---------- */
   function openWindow(cfg) {
     const id = cfg.id || ('w' + (++seq));
-    if (wins.has(id)) { focus(id); if (cfg.reveal) cfg.reveal(); return wins.get(id).api; }
+    if (wins.has(id)) { if (cfg.reveal) cfg.reveal(); return wins.get(id).api; }
 
     const chrome = cfg.chrome !== false;
+    let host = null;
     const el = document.createElement('div');
-    el.className = 'win' + (chrome ? '' : ' static');
-    el.dataset.id = id;
+
     if (chrome) {
-      const d = desk().getBoundingClientRect();
-      const w = Math.min(cfg.w || 620, d.width - 12);
-      const h = Math.min(cfg.h || 440, d.height - 12);
-      const pos = clampPos(cfg.x != null ? cfg.x : Math.round((d.width - w) / 2) + (wins.size * 18),
-        cfg.y != null ? cfg.y : Math.max(6, Math.round((d.height - h) / 2) - 20 + (wins.size * 14)), w, h);
-      el.style.left = pos.x + 'px';
-      el.style.top = pos.y + 'px';
-      el.style.width = w + 'px';
-      el.style.height = h + 'px';
+      host = document.createElement('div');
+      host.className = 'sheet-host';
+      host.style.zIndex = ++zTop;
+      buildSheet(el, cfg);
+      host.appendChild(el);
+      document.body.appendChild(host);
+    } else {
+      buildApp(el, cfg);
+      desk().appendChild(el);
     }
-
-    const right = chrome
-      ? '<span class="t-btns">' +
-      '<button class="tbtn" data-a="max" title="Развернуть" aria-label="Развернуть">' + glyph('max') + '</button>' +
-      '<button class="tbtn" data-a="close" title="Закрыть" aria-label="Закрыть">' + glyph('close') + '</button>' +
-      '</span>'
-      : '';
-
-    // Часы живут в правом конце строки состояния основного окна, а не в шапке.
-    const tray = '<div id="tray">' + ico('network', 14) + ico('clock', 14) + '<span id="clock"></span></div>';
-
-    el.innerHTML =
-      '<div class="titlebar">' +
-      (cfg.icon ? '<span class="t-ico">' + ico(cfg.icon, 14) + '</span>' : '') +
-      '<span class="t-text">' + esc(cfg.title) + '</span>' +
-      right + '</div>' +
-      (cfg.menu ? '<div class="menubar" data-menu></div>' : '') +
-      (cfg.toolbar ? '<div class="toolbar" data-toolbar></div>' : '') +
-      '<div class="win-body" data-body></div>' +
-      (cfg.status !== false ? '<div class="statusbar" data-status><span class="cell panel grow">' + esc(cfg.status || 'Готово') + '</span><span class="cell panel" data-status2>' + esc(cfg.status2 || '') + '</span>' + (chrome ? '' : tray) + '</div>' : '') +
-      (chrome ? '<div class="grip" data-grip style="position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:se-resize"></div>' : '');
-
-    desk().appendChild(el);
 
     const tryClose = () => { (cfg.onClose ? cfg.onClose(id) : true) !== false && close(id); };
 
@@ -90,14 +95,11 @@ window.Shell = (function () {
         if (t2 !== undefined && c.children[1]) c.children[1].textContent = t2;
       },
       close() { close(id); },
-      focus() { focus(id); },
-      maximize(on) { toggleMax(id, on); },
       menu(items) { buildMenu(el.querySelector('[data-menu]'), items); },
-      toolbar(html) { const t = el.querySelector('[data-toolbar]'); if (t) { t.innerHTML = html; } },
+      toolbar(html) { const t = el.querySelector('[data-toolbar]'); if (t) t.innerHTML = html; },
       status2(html) { const s = el.querySelector('[data-status2]'); if (s) s.innerHTML = html; },
-      // Кнопка «Закрыть» становится в правый конец строки с остальными кнопками окна (data-btnrow).
-      // Своих кнопок нет — ставим её по центру отдельной строкой. Перерисовка тела её стирает,
-      // поэтому вьюхи с paint() вызывают closeBtn() в конце своей отрисовки.
+      // Кнопка «Закрыть» встаёт в правый конец ряда с остальными кнопками карточки.
+      // Перерисовка тела её стирает, поэтому вьюхи с paint() вызывают closeBtn() в конце отрисовки.
       closeBtn() {
         if (!chrome) return;
         const bind = (bar, html) => {
@@ -120,121 +122,36 @@ window.Shell = (function () {
       }
     };
 
-    const rec = { id, el, api, cfg, max: false, restore: null, static: !chrome };
+    const rec = { id, el, host, api, cfg };
     wins.set(id, rec);
 
     if (chrome) {
-      el.addEventListener('mousedown', () => focus(id), true);
-      el.querySelector('.titlebar').addEventListener('dblclick', (e) => {
-        if (e.target.closest('.tbtn')) return; toggleMax(id);
-      });
-      el.querySelector('.titlebar').addEventListener('pointerdown', (e) => startDrag(e, id));
-      el.querySelector('[data-grip]').addEventListener('pointerdown', (e) => startResize(e, id));
-      el.querySelectorAll('.tbtn').forEach((b) => b.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const a = b.dataset.a;
-        if (a === 'close') tryClose();
-        if (a === 'max') toggleMax(id);
-      }));
+      el.querySelector('[data-x]').addEventListener('click', tryClose);
+      // Клик по затемнению вокруг карточки тоже закрывает её — как принято в вебе.
+      host.addEventListener('pointerdown', (e) => { if (e.target === host) tryClose(); });
+      rec.onKey = (e) => { if (e.key === 'Escape') tryClose(); };
+      document.addEventListener('keydown', rec.onKey);
     }
 
     if (cfg.menu) api.menu(cfg.menu);
-    if (cfg.toolbar && typeof cfg.toolbar === 'string') api.toolbar(cfg.toolbar);
-    syncVeil();
+    if (typeof cfg.toolbar === 'string') api.toolbar(cfg.toolbar);
     if (cfg.render) cfg.render(api);
-    api.closeBtn();
+    // closeBtn:false — у карточки уже есть своя кнопка действия (например «Понятно»),
+    // вторая «Закрыть» рядом не нужна: крестик в шапке и Esc остаются.
+    if (cfg.closeBtn !== false) api.closeBtn();
 
-    focus(id);
     return api;
   }
 
   function close(id) {
     const r = wins.get(id);
     if (!r) return;
-    r.el.remove();
+    if (r.onKey) document.removeEventListener('keydown', r.onKey);
+    (r.host || r.el).remove();
     wins.delete(id);
-    if (focused === id) focused = null;
-    const rest = [...wins.values()].filter((x) => !x.static);
-    if (rest.length) focus(rest[rest.length - 1].id);
-    syncVeil();
   }
 
-  function focus(id) {
-    const r = wins.get(id);
-    if (!r || r.static) return;
-    [...wins.values()].forEach((x) => { if (!x.static) x.el.classList.remove('active'); });
-    r.el.classList.add('active');
-    r.el.style.zIndex = ++zTop;
-    focused = id;
-  }
-
-  // Пока открыто хоть одно всплывающее окно, основное окно под точечной маской и без кликов.
-  function syncVeil() {
-    desk().classList.toggle('haswin', [...wins.values()].some((x) => !x.static));
-  }
-
-  function toggleMax(id, force) {
-    const r = wins.get(id);
-    if (!r || r.static) return;
-    const d = desk().getBoundingClientRect();
-    const want = force != null ? force : !r.max;
-    if (want) {
-      r.restore = { l: r.el.style.left, t: r.el.style.top, w: r.el.style.width, h: r.el.style.height };
-      r.el.style.left = '0px'; r.el.style.top = '0px';
-      r.el.style.width = d.width + 'px'; r.el.style.height = d.height + 'px';
-      r.max = true;
-    } else if (r.restore) {
-      Object.assign(r.el.style, { left: r.restore.l, top: r.restore.t, width: r.restore.w, height: r.restore.h });
-      r.max = false;
-    }
-    const mb = r.el.querySelector('[data-a="max"]');
-    if (mb) mb.innerHTML = r.max ? glyph('restore') : glyph('max');
-    if (r.cfg.onResize) r.cfg.onResize(r.api);
-    focus(id);
-  }
-
-  function startDrag(e, id) {
-    if (e.target.closest('.tbtn')) return;
-    const r = wins.get(id);
-    if (!r || r.max) return;
-    e.preventDefault();
-    const d = desk().getBoundingClientRect();
-    const sx = e.clientX, sy = e.clientY;
-    const ox = r.el.offsetLeft, oy = r.el.offsetTop;
-    const move = (ev) => {
-      const nx = Math.max(-r.el.offsetWidth + 60, Math.min(ox + ev.clientX - sx, d.width - 40));
-      const ny = Math.max(0, Math.min(oy + ev.clientY - sy, d.height - 24));
-      r.el.style.left = nx + 'px'; r.el.style.top = ny + 'px';
-    };
-    const up = () => {
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', up);
-    };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-  }
-
-  function startResize(e, id) {
-    e.preventDefault(); e.stopPropagation();
-    const r = wins.get(id);
-    if (!r || r.max) return;
-    const d = desk().getBoundingClientRect();
-    const sx = e.clientX, sy = e.clientY;
-    const ow = r.el.offsetWidth, oh = r.el.offsetHeight;
-    const move = (ev) => {
-      r.el.style.width = Math.max(260, Math.min(ow + ev.clientX - sx, d.width - r.el.offsetLeft)) + 'px';
-      r.el.style.height = Math.max(160, Math.min(oh + ev.clientY - sy, d.height - r.el.offsetTop)) + 'px';
-      if (r.cfg.onResize) r.cfg.onResize(r.api);
-    };
-    const up = () => {
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerup', up);
-    };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-  }
-
-  /* ---------- menubar with dropdowns ---------- */
+  /* ---------- меню с выпадающими списками ---------- */
   function buildMenu(bar, groups) {
     bar.innerHTML = '';
     groups.forEach((g) => {
@@ -246,13 +163,11 @@ window.Shell = (function () {
       const dd = document.createElement('div');
       dd.className = 'menu';
       dd.style.display = 'none';
-      dd.style.left = mi.offsetLeft + 'px';
-      dd.style.top = '100%';
       g.items.forEach((it) => {
         if (it === '-') { const s = document.createElement('div'); s.className = 'sep'; dd.appendChild(s); return; }
         const n = document.createElement('div');
         n.className = 'mi' + (it.dis ? ' dis' : '') + (it.check ? ' chk' : '') + (it.sub ? ' sub' : '');
-        n.innerHTML = (it.icon ? '<span style="margin-right:4px;display:inline-block;vertical-align:-2px">' + ico(it.icon, 14) + '</span>' : '') + esc(it.label);
+        n.innerHTML = (it.icon ? '<span style="margin-right:6px;display:inline-block;vertical-align:-3px">' + ico(it.icon, 16) + '</span>' : '') + esc(it.label);
         n.addEventListener('click', (ev) => {
           ev.stopPropagation();
           if (it.dis) return;
@@ -261,7 +176,9 @@ window.Shell = (function () {
         });
         dd.appendChild(n);
       });
-      bar.appendChild(dd);
+      // Подложка привязана к своему пункту, а не к строке меню: тогда она не уезжает,
+      // когда пункты переносятся на новую строку.
+      mi.appendChild(dd);
       mi.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const open = dd.style.display === 'block';
@@ -272,43 +189,42 @@ window.Shell = (function () {
   }
 
   function hideAll() {
-    document.querySelectorAll('.menubar .menu').forEach((m) => (m.style.display = 'none'));
+    document.querySelectorAll('.menu').forEach((m) => (m.style.display = 'none'));
     document.querySelectorAll('.menubar .mi').forEach((m) => m.classList.remove('open'));
   }
   document.addEventListener('click', hideAll);
 
-  /* ---------- dialogs ---------- */
+  /* ---------- диалоги ---------- */
   let lastForm = null;
   function dialog(cfg) {
     return new Promise((resolve) => {
       const m = document.getElementById('modal');
       m.classList.add('show');
-      // Пока открыт модальный диалог, все окна под затемнением — неактивные (серые шапки), как в Win98.
-      document.body.classList.add('modal');
       const box = document.createElement('div');
       box.className = 'dlg';
       const icon = cfg.icon ? '<div style="flex:none">' + ico(cfg.icon, 32) + '</div>' : '';
       box.innerHTML =
-        '<div class="titlebar"><span class="t-ico">' + ico(cfg.icon || 'info', 14) + '</span>' +
-        '<span class="t-text">' + esc(cfg.title || 'Внимание') + '</span>' +
-        '<span class="t-btns"><button class="tbtn" data-x aria-label="Закрыть">' + glyph('close') + '</button></span></div>' +
+        '<div class="head"><span class="t-text">' + esc(cfg.title || 'Внимание') + '</span>' +
+        '<button class="x" data-x aria-label="Закрыть">' + glyph('close') + '</button></div>' +
         '<div class="row">' + icon + '<div class="msg">' + (cfg.html ? cfg.text : esc(cfg.text).replace(/\n/g, '<br>')) + '</div></div>' +
-        (cfg.form ? '<div data-form style="padding:0 12px 6px">' + cfg.form + '</div>' : '') +
+        (cfg.form ? '<div data-form style="padding:0 22px 6px">' + cfg.form + '</div>' : '') +
         '<div class="acts">' + (cfg.buttons || ['OK']).map((b, i) =>
           '<button class="btn' + (i === 0 ? ' def' : '') + '" data-b="' + esc(b) + '">' + esc(b) + '</button>').join('') +
         '</div>';
       m.appendChild(box);
+      const onKey = (e) => { if (e.key === 'Escape') done(null); };
       const done = (v) => {
         lastForm = cfg.form ? box : null;
+        document.removeEventListener('keydown', onKey);
         box.remove();
-        if (!m.children.length) { m.classList.remove('show'); document.body.classList.remove('modal'); }
+        if (!m.children.length) m.classList.remove('show');
         resolve(v);
       };
+      document.addEventListener('keydown', onKey);
       box.querySelectorAll('[data-b]').forEach((b) => b.addEventListener('click', () => done(b.dataset.b)));
       box.querySelector('[data-x]').addEventListener('click', () => done(null));
       const fi = box.querySelector('[data-form] input');
-      if (fi) { fi.focus(); fi.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(( cfg.buttons || ['OK'])[0]); }); }
-      box.addEventListener('keydown', (e) => { if (e.key === 'Escape') done(null); });
+      if (fi) { fi.focus(); fi.addEventListener('keydown', (e) => { if (e.key === 'Enter') done((cfg.buttons || ['OK'])[0]); }); }
     });
   }
   const formValue = (sel) => {
@@ -324,20 +240,10 @@ window.Shell = (function () {
     buttons: ['OK', 'Отмена']
   }).then((v) => (v === 'OK' ? formValue('[data-form] input') : null));
 
-  /* ---------- tray clock ---------- */
-  function tickClock() {
-    const c = document.getElementById('clock');
-    if (!c) return;
-    const d = new Date();
-    c.textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-  }
-
   /* ---------- boot ---------- */
   function boot(cfg) {
     cfg.onBoot && cfg.onBoot();
-    tickClock();
-    setInterval(tickClock, 10000);
   }
 
-  return { openWindow, close, focus, toggleMax, dialog, alert, confirm, prompt, boot, esc, wins, formValue, getWin: (id) => wins.get(id) && wins.get(id).api };
+  return { openWindow, close, dialog, alert, confirm, prompt, boot, esc, formValue, getWin: (id) => wins.get(id) && wins.get(id).api };
 })();

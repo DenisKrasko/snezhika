@@ -211,49 +211,136 @@ window.SEED = (function () {
   };
 
   S.orders = [
-    { id: 'З-2433', date: '2026-11-05 13:55', sup: 'ЮВ-2-40', status: 'Новый', items: 12, sum: 7380, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Лот смешанный, 12 шт.', pos: [{ art: 'BG-1215', name: 'Кулон «Капля»', qty: 7, price: 540, size: '' }, { art: 'BG-1188', name: 'Серьги «Жемчуг»', qty: 5, price: 720, size: 'микс' }] },
-    { id: 'З-2432', date: '2026-11-05 13:20', sup: 'Л7-118', status: 'Подтверждён', items: 60, sum: 19680, prepay: false, send: 'Отправка СДЭК', track: '', comment: 'Лот 12 шт одного цвета, не смешивать.', pos: [{ art: 'SO-105', name: 'Колготки детские', qty: 36, price: 260, size: '98-128' }, { art: 'SO-118', name: 'Лосины женские', qty: 24, price: 430, size: '42-52' }] },
-    { id: 'З-2431', date: '2026-11-05 12:58', sup: 'Б3-28', status: 'Собирается', items: 18, sum: 18100, prepay: true, send: 'ТК «ПЭК»', track: '', comment: 'Пятничные новинки, держите до 17:00.', pos: [{ art: 'W-2255', name: 'Юбка плиссе', qty: 10, price: 890, size: '42-50' }, { art: 'W-2260', name: 'Свитшот оверсайз', qty: 8, price: 1150, size: '42-52' }] },
-    { id: 'З-2430', date: '2026-11-05 12:31', sup: 'СТ1-66', status: 'Новый', items: 20, sum: 10400, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Проверить механизм на каждой, брак вернуть.', pos: [{ art: 'ZN-880', name: 'Зонт автомат', qty: 20, price: 520, size: '' }] },
-    { id: 'З-2429', date: '2026-11-05 12:05', sup: 'ЮВ-2-19', status: 'Подтверждён', items: 52, sum: 30160, prepay: false, send: 'Самовывоз', track: '', comment: 'Детское, размеры 62-86, микс по цвету.', pos: [{ art: 'KD-430', name: 'Боди хлопковое', qty: 40, price: 460, size: '62-86' }, { art: 'KD-441', name: 'Комбинезон велюр', qty: 12, price: 980, size: '70-92' }] },
-    { id: 'З-2418', date: '2026-11-05 11:40', sup: 'СТ9-77', status: 'Новый', items: 14, sum: 9340, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Лот 14 шт, микс по 2 артикула.', pos: [{ art: 'BG-1102', name: 'Кольцо «Волна»', qty: 6, price: 340, size: 'микс' }, { art: 'BG-1188', name: 'Серьги «Жемчуг»', qty: 5, price: 620, size: 'микс' }, { art: 'BG-1204', name: 'Браслет «Коса»', qty: 3, price: 1400, size: '18 см' }] },
-    { id: 'З-2428', date: '2026-11-05 11:26', sup: 'СТ17-5', status: 'Собирается', items: 26, sum: 23100, prepay: true, send: 'ТК «ПЭК»', track: '', comment: 'Пледы + покрывала, всё в одном ящике.', pos: [{ art: 'TX-928', name: 'Плед флис', qty: 20, price: 690, size: '130x160' }, { art: 'TX-940', name: 'Покрывало стёганое', qty: 6, price: 1550, size: '220x240' }] },
-    { id: 'З-2427', date: '2026-11-05 11:12', sup: 'Л2-31', status: 'Новый', items: 40, sum: 17120, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Лот по 8 шт, размеры в ведомости.', pos: [{ art: 'UL-355', name: 'Боксёры мужские', qty: 32, price: 320, size: 'M-XXL' }, { art: 'UL-368', name: 'Комплект «Милан»', qty: 8, price: 860, size: '6-10' }] },
-    { id: 'З-2426', date: '2026-11-05 10:56', sup: 'Б1-33', status: 'Подтверждён', items: 40, sum: 15300, prepay: false, send: 'Отправка Почта', track: '', comment: 'Микс по цветам, шапки + шлемы детям.', pos: [{ art: 'HA-126', name: 'Шапка-бини', qty: 30, price: 350, size: '54-60' }, { art: 'HA-134', name: 'Шлем-шапка', qty: 10, price: 480, size: '48-54' }] },
-    { id: 'З-2425', date: '2026-11-05 10:32', sup: 'СТ13-41', status: 'Выкуплен', items: 60, sum: 10800, prepay: false, send: 'Отправка Почта', track: '', comment: 'Лот 60 пар, один размер в пачке.', pos: [{ art: 'PE-201', name: 'Перчатки вязаные', qty: 60, price: 180, size: 'лот 6 пар' }] },
-    { id: 'З-2424', date: '2026-11-05 10:09', sup: 'ЮВ-1-52', status: 'Отправлен', items: 40, sum: 9600, prepay: false, send: 'Отправка СДЭК', track: '1120104455', comment: 'Одна коробка 40 позиций, микс.', pos: [{ art: 'MS-1000', name: 'Набор «1000 мелочей»', qty: 40, price: 240, size: '' }] },
-    { id: 'З-2423', date: '2026-11-05 09:53', sup: 'Л5-14', status: 'Новый', items: 1, sum: 12800, prepay: true, send: 'Самовывоз', track: '', comment: 'Коляска в коробке, проверять колёса на месте.', pos: [{ art: 'KC-410', name: 'Коляска 2-в-1', qty: 1, price: 12800, size: '' }] },
-    { id: 'З-2417', date: '2026-11-05 09:22', sup: 'СТ7-179', status: 'Подтверждён', items: 20, sum: 20440, prepay: false, send: 'Самовывоз', track: '', comment: 'Детские костюмы, размер 28-32.', pos: [{ art: 'KD-404', name: 'Костюм «Мишка»', qty: 8, price: 980, size: '28-30' }, { art: 'KD-417', name: 'Комбинезон флис', qty: 12, price: 1050, size: '30-32' }] },
-    { id: 'З-2422', date: '2026-11-05 09:16', sup: 'ЮВ-2-8', status: 'Доставлен', items: 10, sum: 13500, prepay: false, send: 'ТК «ПЭК»', track: '4457006644', comment: 'Повербанки проверены, ток соответствует.', pos: [{ art: 'EL-310', name: 'Power bank 20000', qty: 6, price: 1250, size: '' }, { art: 'EL-322', name: 'Наушники TWS', qty: 4, price: 1500, size: '' }] },
-    { id: 'З-2421', date: '2026-11-05 08:48', sup: 'Б6-42', status: 'Доставлен', items: 12, sum: 12960, prepay: false, send: 'Самовывоз', track: '', comment: 'Флисовые костюмы, забрали сами.', pos: [{ art: 'HM-470', name: 'Костюм домашний', qty: 12, price: 1080, size: '44-62' }] },
-    { id: 'З-2420', date: '2026-11-05 08:21', sup: 'Л6-7', status: 'На стопе', items: 3, sum: 9750, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Колодка маломерит, ждём фото.', pos: [{ art: 'SH-245', name: 'Ботинки мужские', qty: 3, price: 3250, size: '41-46' }] },
-    { id: 'З-2419', date: '2026-11-05 07:31', sup: 'СТ10-6', status: 'Подтверждён', items: 15, sum: 13350, prepay: false, send: 'Отправка СДЭК', track: '', comment: 'Наборы по 6 оттенков, срок свежий.', pos: [{ art: 'PR-245', name: 'Помада матовая', qty: 15, price: 890, size: '6 шт' }] },
-    { id: 'З-2415', date: '2026-11-04 18:05', sup: 'Б2-3-20', status: 'Собирается', items: 9, sum: 15750, prepay: true, send: 'Отправка Почта', track: '', comment: 'Новинки вторника, держите бронь.', pos: [{ art: 'W-2210', name: 'Платье «Осень»', qty: 4, price: 1750, size: '44-48' }, { art: 'W-2244', name: 'Блуза атлас', qty: 5, price: 1750, size: '46' }] },
-    { id: 'З-2412', date: '2026-11-04 13:11', sup: 'Л2-60', status: 'Выкуплен', items: 36, sum: 8640, prepay: false, send: 'Отправка СДЭК', track: '', comment: 'Три лота по 12 пар.', pos: [{ art: 'SO-77', name: 'Носки мужские лот 12', qty: 24, price: 240, size: '28-31' }, { art: 'SO-91', name: 'Носки женские лот 12', qty: 12, price: 240, size: '23-27' }] },
-    { id: 'З-2408', date: '2026-11-03 16:44', sup: 'СТ6-31', status: 'Отправлен', items: 16, sum: 14320, prepay: false, send: 'Отправка СДЭК', track: '1120098877', comment: 'Комплекты 8+8.', pos: [{ art: 'UL-330', name: 'Комплект «Париж»', qty: 8, price: 890, size: '3-5' }, { art: 'UL-341', name: 'Бюстгальтер бесшовный', qty: 8, price: 900, size: '3-4' }] },
-    { id: 'З-2401', date: '2026-11-02 10:30', sup: 'ЮВ-1-33', status: 'Доставлен', items: 6, sum: 9480, prepay: false, send: 'ТК «ПЭК»', track: '4457001122', comment: 'Получено, брак 1 шт — оформлена замена.', pos: [{ art: 'SP-880', name: 'Костюм спортивный', qty: 6, price: 1580, size: '48-52' }] },
-    { id: 'З-2399', date: '2026-11-01 19:02', sup: 'СТ3-18', status: 'Доставлен', items: 24, sum: 18240, prepay: false, send: 'Отправка СДЭК', track: '1120077665', comment: 'Коробка 24 шт, всё пришло.', pos: [{ art: 'TY-556', name: 'Набор «Кухня»', qty: 12, price: 760, size: '' }, { art: 'TY-561', name: 'Машинка инерционная', qty: 12, price: 760, size: '' }] },
-    { id: 'З-2395', date: '2026-10-30 12:18', sup: 'Л3-45', status: 'На стопе', items: 4, sum: 7200, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Ждём подтверждения размерной сетки.', pos: [{ art: 'SH-204', name: 'Ботинки детские', qty: 4, price: 1800, size: '29-32' }] },
-    { id: 'З-2390', date: '2026-10-28 15:50', sup: 'СТ4-120', status: 'Отменён', items: 1, sum: 4300, prepay: true, send: 'Самовывоз', track: '', comment: 'Точка закрыта, возврат на баланс.', pos: [{ art: 'FUR-11', name: 'Жилет меховой', qty: 1, price: 4300, size: '50' }] },
-    { id: 'З-2387', date: '2026-10-27 09:41', sup: 'СТ12-8', status: 'Доставлен', items: 8, sum: 9870, prepay: false, send: 'ТК «ПЭК»', track: '4457009911', comment: '', pos: [{ art: 'TX-900', name: 'Постельное «Сатин»', qty: 5, price: 1680, size: '1.5 сп' }, { art: 'TX-915', name: 'Полотенце махра', qty: 3, price: 490, size: '70x140' }] },
-    { id: 'З-2380', date: '2026-10-24 11:09', sup: 'Б4-15', status: 'Доставлен', items: 3, sum: 12870, prepay: false, send: 'Отправка СДЭК', track: '1120065544', comment: 'Пуховики, все целы.', pos: [{ art: 'CO-707', name: 'Пуховик женский', qty: 3, price: 4290, size: '46-50' }] },
-    { id: 'З-2374', date: '2026-10-21 14:26', sup: 'ЮВ-2-8', status: 'Доставлен', items: 5, sum: 6750, prepay: true, send: 'Самовывоз', track: '', comment: 'Проверены на месте, боя нет.', pos: [{ art: 'EL-310', name: 'Power bank 20000', qty: 3, price: 1250, size: '' }, { art: 'EL-322', name: 'Наушники TWS', qty: 2, price: 1500, size: '' }] },
-    { id: 'З-2372', date: '2026-10-20 16:12', sup: 'СТ12-8', status: 'Доставлен', items: 10, sum: 9660, prepay: false, send: 'ТК «ПЭК»', track: '4457008800', comment: 'Постельное и полотенца, всё по ведомости.', pos: [{ art: 'TX-900', name: 'Постельное «Сатин»', qty: 4, price: 1680, size: '1.5 сп' }, { art: 'TX-915', name: 'Полотенце махра', qty: 6, price: 490, size: '70x140' }] },
-    { id: 'З-2370', date: '2026-10-19 11:48', sup: 'СТ9-77', status: 'Доставлен', items: 20, sum: 6800, prepay: false, send: 'Отправка СДЭК', track: '1120061122', comment: 'Кольца микс, 20 шт одним лотом.', pos: [{ art: 'BG-1102', name: 'Кольцо «Волна»', qty: 20, price: 340, size: 'микс' }] },
-    { id: 'З-2368', date: '2026-10-17 09:05', sup: 'ЮВ-1-33', status: 'Доставлен', items: 10, sum: 15800, prepay: false, send: 'ТК «ПЭК»', track: '4457007711', comment: 'Взрослые размеры 46-58.', pos: [{ art: 'SP-880', name: 'Костюм спортивный', qty: 10, price: 1580, size: '46-58' }] },
-    { id: 'З-2365', date: '2026-10-15 18:33', sup: 'Л2-60', status: 'Доставлен', items: 60, sum: 14400, prepay: false, send: 'Отправка СДЭК', track: '1120059900', comment: 'Пять лотов по 12 пар.', pos: [{ art: 'SO-77', name: 'Носки мужские лот 12', qty: 36, price: 240, size: '28-31' }, { art: 'SO-91', name: 'Носки женские лот 12', qty: 24, price: 240, size: '23-27' }] },
-    { id: 'З-2361', date: '2026-10-12 13:27', sup: 'Б4-15', status: 'Доставлен', items: 2, sum: 7500, prepay: true, send: 'Отправка СДЭК', track: '4457005566', comment: 'Пальто демисезон, 2 шт.', pos: [{ art: 'CO-712', name: 'Пальто демисезон', qty: 2, price: 3750, size: '46-54' }] },
-    { id: 'З-2358', date: '2026-10-09 10:14', sup: 'СТ3-18', status: 'Доставлен', items: 18, sum: 13680, prepay: false, send: 'Отправка СДЭК', track: '1120048877', comment: 'Кухня + машинки, коробка целая.', pos: [{ art: 'TY-556', name: 'Набор «Кухня»', qty: 6, price: 760, size: '' }, { art: 'TY-561', name: 'Машинка инерционная', qty: 12, price: 760, size: '' }] },
-    { id: 'З-2355', date: '2026-10-06 15:02', sup: 'СТ6-31', status: 'Доставлен', items: 12, sum: 10740, prepay: false, send: 'ТК «ПЭК»', track: '1120043322', comment: 'Комплекты и бесшовные, всё пришло.', pos: [{ art: 'UL-330', name: 'Комплект «Париж»', qty: 6, price: 890, size: '3-5' }, { art: 'UL-341', name: 'Бюстгальтер бесшовный', qty: 6, price: 900, size: '3-6' }] },
-    { id: 'З-2352', date: '2026-10-02 12:40', sup: 'Б2-3-20', status: 'Отменён', items: 3, sum: 5250, prepay: true, send: 'Отправка Почта', track: '', comment: 'Клиент отказался до сборки, сумма на балансе.', pos: [{ art: 'W-2210', name: 'Платье «Осень»', qty: 3, price: 1750, size: '44-48' }] },
-    { id: 'З-2349', date: '2026-09-28 09:18', sup: 'Б1-7', status: 'Доставлен', items: 29, sum: 12660, prepay: false, send: 'ТК «ПЭК»', track: '4457002299', comment: 'Шапки с помпоном и пуховые шарфы.', pos: [{ art: 'HA-100', name: 'Шапка вязаная', qty: 25, price: 420, size: '56-58' }, { art: 'SC-201', name: 'Шарф пуховый', qty: 4, price: 540, size: '180x70' }] },
-    { id: 'З-2346', date: '2026-09-24 17:55', sup: 'ЮВ-2-8', status: 'Доставлен', items: 6, sum: 9000, prepay: false, send: 'Отправка СДЭК', track: '1120039911', comment: 'Наушники, чек приложен.', pos: [{ art: 'EL-322', name: 'Наушники TWS', qty: 6, price: 1500, size: '' }] },
-    { id: 'З-2343', date: '2026-09-19 11:23', sup: 'СТ7-179', status: 'Доставлен', items: 20, sum: 20020, prepay: false, send: 'ТК «ПЭК»', track: '4457001188', comment: 'Детское на осеннюю распродажу.', pos: [{ art: 'KD-404', name: 'Костюм «Мишка»', qty: 14, price: 980, size: '28-32' }, { art: 'KD-417', name: 'Комбинезон флис', qty: 6, price: 1050, size: '30-36' }] },
-    { id: 'З-2340', date: '2026-09-15 08:46', sup: 'Л1-9', status: 'Доставлен', items: 15, sum: 12450, prepay: true, send: 'Отправка СДЭК', track: '1120035566', comment: 'Рюкзаки в коробе, кошельки отдельно.', pos: [{ art: 'BK-500', name: 'Рюкзак городской', qty: 5, price: 1450, size: '' }, { art: 'BK-512', name: 'Кошелёк женский', qty: 10, price: 520, size: '' }] },
-    { id: 'З-2337', date: '2026-09-10 14:05', sup: 'СТ7-4', status: 'Доставлен', items: 4, sum: 7920, prepay: false, send: 'Самовывоз', track: '', comment: 'Плюс-размеры, забрали сами.', pos: [{ art: 'PL-900', name: 'Платье плюс', qty: 4, price: 1980, size: '54-64' }] },
-    { id: 'З-2334', date: '2026-09-04 10:31', sup: 'ЮВ-1-52', status: 'Доставлен', items: 60, sum: 14400, prepay: false, send: 'ТК «ПЭК»', track: '4457000077', comment: 'Три коробки мелочёвки, микс.', pos: [{ art: 'MS-1000', name: 'Набор «1000 мелочей»', qty: 60, price: 240, size: '' }] },
-    { id: 'З-2331', date: '2026-08-28 16:47', sup: 'СТ2-14', status: 'Доставлен', items: 12, sum: 11760, prepay: false, send: 'Отправка СДЭК', track: '1120021100', comment: 'Купальники на остатки, сезон закрыт.', pos: [{ art: 'SW-600', name: 'Купальник слитный', qty: 12, price: 980, size: 'S-L' }] }
+    { id: 'З-2433', date: '2026-11-05 13:55', sup: 'ЮВ-2-40', stage: 'Заказ', items: 12, sum: 7380, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Лот смешанный, 12 шт.', pos: [{ art: 'BG-1215', name: 'Кулон «Капля»', qty: 7, price: 540, size: '' }, { art: 'BG-1188', name: 'Серьги «Жемчуг»', qty: 5, price: 720, size: 'микс' }] },
+    { id: 'З-2432', date: '2026-11-05 13:20', sup: 'Л7-118', stage: 'Заказ', items: 60, sum: 19680, prepay: false, send: 'Отправка СДЭК', track: '', comment: 'Лот 12 шт одного цвета, не смешивать.', pos: [{ art: 'SO-105', name: 'Колготки детские', qty: 36, price: 260, size: '98-128' }, { art: 'SO-118', name: 'Лосины женские', qty: 24, price: 430, size: '42-52' }] },
+    { id: 'З-2431', date: '2026-11-05 12:58', sup: 'Б3-28', stage: 'Заказ', items: 18, sum: 18100, prepay: true, send: 'ТК «ПЭК»', track: '', comment: 'Пятничные новинки, держите до 17:00.', pos: [{ art: 'W-2255', name: 'Юбка плиссе', qty: 10, price: 890, size: '42-50' }, { art: 'W-2260', name: 'Свитшот оверсайз', qty: 8, price: 1150, size: '42-52' }] },
+    { id: 'З-2430', date: '2026-11-05 12:31', sup: 'СТ1-66', stage: 'Заказ', items: 20, sum: 10400, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Проверить механизм на каждой, брак вернуть.', pos: [{ art: 'ZN-880', name: 'Зонт автомат', qty: 20, price: 520, size: '' }] },
+    { id: 'З-2429', date: '2026-11-05 12:05', sup: 'ЮВ-2-19', stage: 'Заказ', items: 52, sum: 30160, prepay: false, send: 'Самовывоз', track: '', comment: 'Детское, размеры 62-86, микс по цвету.', pos: [{ art: 'KD-430', name: 'Боди хлопковое', qty: 40, price: 460, size: '62-86' }, { art: 'KD-441', name: 'Комбинезон велюр', qty: 12, price: 980, size: '70-92' }] },
+    { id: 'З-2418', date: '2026-11-05 11:40', sup: 'СТ9-77', stage: 'Заказ', items: 14, sum: 9340, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Лот 14 шт, микс по 2 артикула.', pos: [{ art: 'BG-1102', name: 'Кольцо «Волна»', qty: 6, price: 340, size: 'микс' }, { art: 'BG-1188', name: 'Серьги «Жемчуг»', qty: 5, price: 620, size: 'микс' }, { art: 'BG-1204', name: 'Браслет «Коса»', qty: 3, price: 1400, size: '18 см' }] },
+    { id: 'З-2428', date: '2026-11-05 11:26', sup: 'СТ17-5', stage: 'Заказ', items: 26, sum: 23100, prepay: true, send: 'ТК «ПЭК»', track: '', comment: 'Пледы + покрывала, всё в одном ящике.', pos: [{ art: 'TX-928', name: 'Плед флис', qty: 20, price: 690, size: '130x160' }, { art: 'TX-940', name: 'Покрывало стёганое', qty: 6, price: 1550, size: '220x240' }] },
+    { id: 'З-2427', date: '2026-11-05 11:12', sup: 'Л2-31', stage: 'Заказ', items: 40, sum: 17120, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Лот по 8 шт, размеры в ведомости.', pos: [{ art: 'UL-355', name: 'Боксёры мужские', qty: 32, price: 320, size: 'M-XXL' }, { art: 'UL-368', name: 'Комплект «Милан»', qty: 8, price: 860, size: '6-10' }] },
+    { id: 'З-2426', date: '2026-11-05 10:56', sup: 'Б1-33', stage: 'Заказ', items: 40, sum: 15300, prepay: false, send: 'Отправка Почта', track: '', comment: 'Микс по цветам, шапки + шлемы детям.', pos: [{ art: 'HA-126', name: 'Шапка-бини', qty: 30, price: 350, size: '54-60' }, { art: 'HA-134', name: 'Шлем-шапка', qty: 10, price: 480, size: '48-54' }] },
+    { id: 'З-2425', date: '2026-11-05 10:32', sup: 'СТ13-41', stage: 'Выкуп', items: 60, sum: 10800, prepay: false, send: 'Отправка Почта', track: '', comment: 'Лот 60 пар, один размер в пачке.', pos: [{ art: 'PE-201', name: 'Перчатки вязаные', qty: 60, price: 180, size: 'лот 6 пар' }] },
+    { id: 'З-2424', date: '2026-11-05 10:09', sup: 'ЮВ-1-52', stage: 'Выдача', items: 40, sum: 9600, prepay: false, send: 'Отправка СДЭК', track: '1120104455', comment: 'Одна коробка 40 позиций, микс.', pos: [{ art: 'MS-1000', name: 'Набор «1000 мелочей»', qty: 40, price: 240, size: '' }] },
+    { id: 'З-2423', date: '2026-11-05 09:53', sup: 'Л5-14', stage: 'Заказ', items: 1, sum: 12800, prepay: true, send: 'Самовывоз', track: '', comment: 'Коляска в коробке, проверять колёса на месте.', pos: [{ art: 'KC-410', name: 'Коляска 2-в-1', qty: 1, price: 12800, size: '' }] },
+    { id: 'З-2417', date: '2026-11-05 09:22', sup: 'СТ7-179', stage: 'Заказ', items: 20, sum: 20440, prepay: false, send: 'Самовывоз', track: '', comment: 'Детские костюмы, размер 28-32.', pos: [{ art: 'KD-404', name: 'Костюм «Мишка»', qty: 8, price: 980, size: '28-30' }, { art: 'KD-417', name: 'Комбинезон флис', qty: 12, price: 1050, size: '30-32' }] },
+    { id: 'З-2422', date: '2026-11-05 09:16', sup: 'ЮВ-2-8', stage: 'Получено', items: 10, sum: 13500, prepay: false, send: 'ТК «ПЭК»', track: '4457006644', comment: 'Повербанки проверены, ток соответствует.', pos: [{ art: 'EL-310', name: 'Power bank 20000', qty: 6, price: 1250, size: '' }, { art: 'EL-322', name: 'Наушники TWS', qty: 4, price: 1500, size: '' }] },
+    { id: 'З-2421', date: '2026-11-05 08:48', sup: 'Б6-42', stage: 'Получено', items: 12, sum: 12960, prepay: false, send: 'Самовывоз', track: '', comment: 'Флисовые костюмы, забрали сами.', pos: [{ art: 'HM-470', name: 'Костюм домашний', qty: 12, price: 1080, size: '44-62' }] },
+    { id: 'З-2420', date: '2026-11-05 08:21', sup: 'Л6-7', stage: 'Невыкуп', items: 3, sum: 9750, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Колодка маломерит, ждём фото.', pos: [{ art: 'SH-245', name: 'Ботинки мужские', qty: 3, price: 3250, size: '41-46' }] },
+    { id: 'З-2419', date: '2026-11-05 07:31', sup: 'СТ10-6', stage: 'Заказ', items: 15, sum: 13350, prepay: false, send: 'Отправка СДЭК', track: '', comment: 'Наборы по 6 оттенков, срок свежий.', pos: [{ art: 'PR-245', name: 'Помада матовая', qty: 15, price: 890, size: '6 шт' }] },
+    { id: 'З-2415', date: '2026-11-04 18:05', sup: 'Б2-3-20', stage: 'Заказ', items: 9, sum: 15750, prepay: true, send: 'Отправка Почта', track: '', comment: 'Новинки вторника, держите бронь.', pos: [{ art: 'W-2210', name: 'Платье «Осень»', qty: 4, price: 1750, size: '44-48' }, { art: 'W-2244', name: 'Блуза атлас', qty: 5, price: 1750, size: '46' }] },
+    { id: 'З-2412', date: '2026-11-04 13:11', sup: 'Л2-60', stage: 'Выкуп', items: 36, sum: 8640, prepay: false, send: 'Отправка СДЭК', track: '', comment: 'Три лота по 12 пар.', pos: [{ art: 'SO-77', name: 'Носки мужские лот 12', qty: 24, price: 240, size: '28-31' }, { art: 'SO-91', name: 'Носки женские лот 12', qty: 12, price: 240, size: '23-27' }] },
+    { id: 'З-2408', date: '2026-11-03 16:44', sup: 'СТ6-31', stage: 'Выдача', items: 16, sum: 14320, prepay: false, send: 'Отправка СДЭК', track: '1120098877', comment: 'Комплекты 8+8.', pos: [{ art: 'UL-330', name: 'Комплект «Париж»', qty: 8, price: 890, size: '3-5' }, { art: 'UL-341', name: 'Бюстгальтер бесшовный', qty: 8, price: 900, size: '3-4' }] },
+    { id: 'З-2401', date: '2026-11-02 10:30', sup: 'ЮВ-1-33', stage: 'Получено', items: 6, sum: 9480, prepay: false, send: 'ТК «ПЭК»', track: '4457001122', comment: 'Получено, брак 1 шт — оформлена замена.', pos: [{ art: 'SP-880', name: 'Костюм спортивный', qty: 6, price: 1580, size: '48-52' }] },
+    { id: 'З-2399', date: '2026-11-01 19:02', sup: 'СТ3-18', stage: 'Получено', items: 24, sum: 18240, prepay: false, send: 'Отправка СДЭК', track: '1120077665', comment: 'Коробка 24 шт, всё пришло.', pos: [{ art: 'TY-556', name: 'Набор «Кухня»', qty: 12, price: 760, size: '' }, { art: 'TY-561', name: 'Машинка инерционная', qty: 12, price: 760, size: '' }] },
+    { id: 'З-2395', date: '2026-10-30 12:18', sup: 'Л3-45', stage: 'Невыкуп', items: 4, sum: 7200, prepay: true, send: 'Отправка СДЭК', track: '', comment: 'Ждём подтверждения размерной сетки.', pos: [{ art: 'SH-204', name: 'Ботинки детские', qty: 4, price: 1800, size: '29-32' }] },
+    { id: 'З-2390', date: '2026-10-28 15:50', sup: 'СТ4-120', stage: 'Отменён', items: 1, sum: 4300, prepay: true, send: 'Самовывоз', track: '', comment: 'Точка закрыта, возврат на баланс.', pos: [{ art: 'FUR-11', name: 'Жилет меховой', qty: 1, price: 4300, size: '50' }] },
+    { id: 'З-2387', date: '2026-10-27 09:41', sup: 'СТ12-8', stage: 'Получено', items: 8, sum: 9870, prepay: false, send: 'ТК «ПЭК»', track: '4457009911', comment: '', pos: [{ art: 'TX-900', name: 'Постельное «Сатин»', qty: 5, price: 1680, size: '1.5 сп' }, { art: 'TX-915', name: 'Полотенце махра', qty: 3, price: 490, size: '70x140' }] },
+    { id: 'З-2380', date: '2026-10-24 11:09', sup: 'Б4-15', stage: 'Получено', items: 3, sum: 12870, prepay: false, send: 'Отправка СДЭК', track: '1120065544', comment: 'Пуховики, все целы.', pos: [{ art: 'CO-707', name: 'Пуховик женский', qty: 3, price: 4290, size: '46-50' }] },
+    { id: 'З-2374', date: '2026-10-21 14:26', sup: 'ЮВ-2-8', stage: 'Получено', items: 5, sum: 6750, prepay: true, send: 'Самовывоз', track: '', comment: 'Проверены на месте, боя нет.', pos: [{ art: 'EL-310', name: 'Power bank 20000', qty: 3, price: 1250, size: '' }, { art: 'EL-322', name: 'Наушники TWS', qty: 2, price: 1500, size: '' }] },
+    { id: 'З-2372', date: '2026-10-20 16:12', sup: 'СТ12-8', stage: 'Получено', items: 10, sum: 9660, prepay: false, send: 'ТК «ПЭК»', track: '4457008800', comment: 'Постельное и полотенца, всё по ведомости.', pos: [{ art: 'TX-900', name: 'Постельное «Сатин»', qty: 4, price: 1680, size: '1.5 сп' }, { art: 'TX-915', name: 'Полотенце махра', qty: 6, price: 490, size: '70x140' }] },
+    { id: 'З-2370', date: '2026-10-19 11:48', sup: 'СТ9-77', stage: 'Получено', items: 20, sum: 6800, prepay: false, send: 'Отправка СДЭК', track: '1120061122', comment: 'Кольца микс, 20 шт одним лотом.', pos: [{ art: 'BG-1102', name: 'Кольцо «Волна»', qty: 20, price: 340, size: 'микс' }] },
+    { id: 'З-2368', date: '2026-10-17 09:05', sup: 'ЮВ-1-33', stage: 'Получено', items: 10, sum: 15800, prepay: false, send: 'ТК «ПЭК»', track: '4457007711', comment: 'Взрослые размеры 46-58.', pos: [{ art: 'SP-880', name: 'Костюм спортивный', qty: 10, price: 1580, size: '46-58' }] },
+    { id: 'З-2365', date: '2026-10-15 18:33', sup: 'Л2-60', stage: 'Получено', items: 60, sum: 14400, prepay: false, send: 'Отправка СДЭК', track: '1120059900', comment: 'Пять лотов по 12 пар.', pos: [{ art: 'SO-77', name: 'Носки мужские лот 12', qty: 36, price: 240, size: '28-31' }, { art: 'SO-91', name: 'Носки женские лот 12', qty: 24, price: 240, size: '23-27' }] },
+    { id: 'З-2361', date: '2026-10-12 13:27', sup: 'Б4-15', stage: 'Получено', items: 2, sum: 7500, prepay: true, send: 'Отправка СДЭК', track: '4457005566', comment: 'Пальто демисезон, 2 шт.', pos: [{ art: 'CO-712', name: 'Пальто демисезон', qty: 2, price: 3750, size: '46-54' }] },
+    { id: 'З-2358', date: '2026-10-09 10:14', sup: 'СТ3-18', stage: 'Получено', items: 18, sum: 13680, prepay: false, send: 'Отправка СДЭК', track: '1120048877', comment: 'Кухня + машинки, коробка целая.', pos: [{ art: 'TY-556', name: 'Набор «Кухня»', qty: 6, price: 760, size: '' }, { art: 'TY-561', name: 'Машинка инерционная', qty: 12, price: 760, size: '' }] },
+    { id: 'З-2355', date: '2026-10-06 15:02', sup: 'СТ6-31', stage: 'Получено', items: 12, sum: 10740, prepay: false, send: 'ТК «ПЭК»', track: '1120043322', comment: 'Комплекты и бесшовные, всё пришло.', pos: [{ art: 'UL-330', name: 'Комплект «Париж»', qty: 6, price: 890, size: '3-5' }, { art: 'UL-341', name: 'Бюстгальтер бесшовный', qty: 6, price: 900, size: '3-6' }] },
+    { id: 'З-2352', date: '2026-10-02 12:40', sup: 'Б2-3-20', stage: 'Отменён', items: 3, sum: 5250, prepay: true, send: 'Отправка Почта', track: '', comment: 'Клиент отказался до сборки, сумма на балансе.', pos: [{ art: 'W-2210', name: 'Платье «Осень»', qty: 3, price: 1750, size: '44-48' }] },
+    { id: 'З-2349', date: '2026-09-28 09:18', sup: 'Б1-7', stage: 'Получено', items: 29, sum: 12660, prepay: false, send: 'ТК «ПЭК»', track: '4457002299', comment: 'Шапки с помпоном и пуховые шарфы.', pos: [{ art: 'HA-100', name: 'Шапка вязаная', qty: 25, price: 420, size: '56-58' }, { art: 'SC-201', name: 'Шарф пуховый', qty: 4, price: 540, size: '180x70' }] },
+    { id: 'З-2346', date: '2026-09-24 17:55', sup: 'ЮВ-2-8', stage: 'Получено', items: 6, sum: 9000, prepay: false, send: 'Отправка СДЭК', track: '1120039911', comment: 'Наушники, чек приложен.', pos: [{ art: 'EL-322', name: 'Наушники TWS', qty: 6, price: 1500, size: '' }] },
+    { id: 'З-2343', date: '2026-09-19 11:23', sup: 'СТ7-179', stage: 'Получено', items: 20, sum: 20020, prepay: false, send: 'ТК «ПЭК»', track: '4457001188', comment: 'Детское на осеннюю распродажу.', pos: [{ art: 'KD-404', name: 'Костюм «Мишка»', qty: 14, price: 980, size: '28-32' }, { art: 'KD-417', name: 'Комбинезон флис', qty: 6, price: 1050, size: '30-36' }] },
+    { id: 'З-2340', date: '2026-09-15 08:46', sup: 'Л1-9', stage: 'Получено', items: 15, sum: 12450, prepay: true, send: 'Отправка СДЭК', track: '1120035566', comment: 'Рюкзаки в коробе, кошельки отдельно.', pos: [{ art: 'BK-500', name: 'Рюкзак городской', qty: 5, price: 1450, size: '' }, { art: 'BK-512', name: 'Кошелёк женский', qty: 10, price: 520, size: '' }] },
+    { id: 'З-2337', date: '2026-09-10 14:05', sup: 'СТ7-4', stage: 'Получено', items: 4, sum: 7920, prepay: false, send: 'Самовывоз', track: '', comment: 'Плюс-размеры, забрали сами.', pos: [{ art: 'PL-900', name: 'Платье плюс', qty: 4, price: 1980, size: '54-64' }] },
+    { id: 'З-2334', date: '2026-09-04 10:31', sup: 'ЮВ-1-52', stage: 'Получено', items: 60, sum: 14400, prepay: false, send: 'ТК «ПЭК»', track: '4457000077', comment: 'Три коробки мелочёвки, микс.', pos: [{ art: 'MS-1000', name: 'Набор «1000 мелочей»', qty: 60, price: 240, size: '' }] },
+    { id: 'З-2331', date: '2026-08-28 16:47', sup: 'СТ2-14', stage: 'Получено', items: 12, sum: 11760, prepay: false, send: 'Отправка СДЭК', track: '1120021100', comment: 'Купальники на остатки, сезон закрыт.', pos: [{ art: 'SW-600', name: 'Купальник слитный', qty: 12, price: 980, size: 'S-L' }] }
   ];
+
+  /* ---------------- выкупы по датам ---------------- */
+  // Посредник выкупает не по одному заказу, а пачкой за день, поэтому кабинет
+  // группирует заказы по дате: одна дата = один выкуп со своей сводкой «купили /
+  // не купили / отдали». В ручном списке выше даты редкие (по 1–2 заказа), и
+  // плотность добирает генератор ниже. Он детерминированный: один и тот же день
+  // всегда даёт один и тот же набор, иначе сводные суммы прыгали бы между
+  // перезагрузками и ?check ловил бы расхождения.
+  const VYKUP_PLAN = [
+    ['2026-11-04', 9], ['2026-11-03', 11], ['2026-11-02', 8], ['2026-11-01', 7], ['2026-10-31', 9],
+    ['2026-10-30', 7], ['2026-10-29', 6], ['2026-10-28', 6], ['2026-10-27', 5], ['2026-10-26', 7],
+    ['2026-10-25', 5], ['2026-10-24', 5], ['2026-10-23', 6], ['2026-10-22', 4]
+  ];
+
+  // Чем старше выкуп, тем дальше он уехал по цепочке Заказ → Выкуп/Невыкуп → Выдача → Получено.
+  function stageMix (day) {
+    if (day === '2026-11-04') return [['Заказ', .7], ['Выкуп', .3]];
+    if (day === '2026-11-03') return [['Заказ', .35], ['Выкуп', .4], ['Невыкуп', .15], ['Выдача', .1]];
+    if (day === '2026-11-02') return [['Заказ', .2], ['Выкуп', .35], ['Невыкуп', .1], ['Выдача', .2], ['Получено', .15]];
+    if (day >= '2026-10-30') return [['Выкуп', .2], ['Невыкуп', .1], ['Выдача', .25], ['Получено', .4], ['Заменён', .05]];
+    return [['Получено', .74], ['Невыкуп', .1], ['Выдача', .06], ['Заменён', .06], ['Отменён', .04]];
+  }
+
+  function pickStage (mix, x) {
+    let acc = 0;
+    for (let i = 0; i < mix.length; i++) {
+      acc += mix[i][1];
+      if (x < acc) return mix[i][0];
+    }
+    return mix[mix.length - 1][0];
+  }
+
+  const PACKS = ['', '', '5 шт', '10 шт', 'лот 12', 'короб 20'];
+  const SELLS = ['Отправка СДЭК', 'Отправка СДЭК', 'ТК «ПЭК»', 'Отправка Почта', 'Самовывоз'];
+  const GEN_NOTES = ['', '', 'Лот смешанный, не пересортировать.', 'Проверить упаковку на месте.',
+    'Размеры в ведомости.', 'Держать бронь до оплаты.', 'Фото перед отправкой обязательно.',
+    'Один цвет, без микса.', 'Со склада брак не класть.'];
+
+  // Номера не должны пересекаться с ручным списком: идём вниз по свободным.
+  const usedIds = {};
+  S.orders.forEach((o) => { usedIds[o.id] = 1; });
+  let nextId = 2432;
+  function freeId () {
+    while (usedIds['З-' + nextId]) nextId--;
+    const id = 'З-' + nextId;
+    usedIds[id] = 1; nextId--;
+    return id;
+  }
+
+  VYKUP_PLAN.forEach((plan) => {
+    const day = plan[0], count = plan[1], r = rnd('vykup:' + day), mix = stageMix(day);
+    for (let i = 0; i < count; i++) {
+      const sup = S.suppliers[Math.floor(r() * S.suppliers.length)];
+      const pool = S.goods.filter((g) => g.sup === sup.code);
+      if (!pool.length) continue;
+      const pos = [];
+      const want = 1 + Math.floor(r() * 3);
+      for (let k = 0; k < want; k++) {
+        const g = pool[Math.floor(r() * pool.length)];
+        if (pos.some((p) => p.art === g.art)) continue;
+        pos.push({
+          art: g.art, name: g.name,
+          qty: 1 + Math.floor(r() * 12) * (sup.min || 1),
+          price: g.price, size: g.sizes || ''
+        });
+      }
+      const items = pos.reduce((a, p) => a + p.qty, 0);
+      const sum = pos.reduce((a, p) => a + p.qty * p.price, 0);
+      const stage = pickStage(mix, r());
+      const sent = stage === 'Выдача' || stage === 'Получено';
+      const hh = 7 + Math.floor(r() * 12), mm = Math.floor(r() * 60);
+      S.orders.push({
+        id: freeId(), date: day + ' ' + (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm,
+        sup: sup.code, stage: stage, items: items, sum: sum,
+        prepay: r() < .45,
+        send: sup.pickup && r() < .3 ? 'Самовывоз' : SELLS[Math.floor(r() * SELLS.length)],
+        track: sent ? '112' + String(1000000 + Math.floor(r() * 8999999)) : '',
+        comment: GEN_NOTES[Math.floor(r() * GEN_NOTES.length)],
+        pack: PACKS[Math.floor(r() * PACKS.length)],
+        own: r() < .25 ? 'Мой: ' + (r() < .5 ? 'только этот цвет' : 'не смешивать размеры') : '',
+        retail: { q: r() < .2 ? 1 + Math.floor(r() * 3) : 0, p: pos[0].price + 300 },
+        pos: pos
+      });
+    }
+  });
+
+  S.orders.sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
   const mv = [
     { date: '2026-11-05 13:56', type: 'Списание', sum: -7380, ref: 'З-2433', comment: 'Бижутерия ЮВ-2-40, предоплата 100%' },

@@ -1,6 +1,6 @@
 /* Mock-данные сервиса «Садовод-посредник». Всё локальное, ничего не отправляется наружу. */
 window.DATA = {
-  rev: 3,
+  rev: 4,
 
   user: {
     name: 'Денис Красков',
@@ -41,7 +41,9 @@ window.DATA = {
     'Электроника', 'Верхняя одежда', 'Спецодежда'
   ],
 
-  orderStatuses: ['Новый', 'Подтверждён', 'Собирается', 'Выкуплен', 'Отправлен', 'Доставлен', 'На стопе', 'Отменён'],
+  // Этап товара внутри выкупа — он задаёт цвет карточки, а не «статус» как текст.
+  orderStages: ['Заказ', 'Выкуп', 'Невыкуп', 'Выдача', 'Получено', 'Отменён', 'Заменён'],
+  orgPct: 10, // органический сбор посредника, % от суммы заказа
   collectionTabs: ['Мои', 'Сборы группы', 'Наличие', 'Лотереи', 'Бронь', 'На стопе', 'На выкупе', 'Архив', 'Отмененные'],
 
   help: [
@@ -80,15 +82,24 @@ delete window.SEED;
   });
   const ids = new Set(D.orders.map((o) => o.id));
   if (ids.size !== D.orders.length) out.push('дубли номеров заказов');
-  const st = new Set(D.orderStatuses);
+  const st = new Set(D.orderStages);
+  const dayRe = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
   D.orders.forEach((o) => {
     if (!codes.has(o.sup)) out.push('заказ ' + o.id + ': нет поставщика ' + o.sup);
-    if (!st.has(o.status)) out.push('заказ ' + o.id + ': статус «' + o.status + '» вне справочника');
+    if (!st.has(o.stage)) out.push('заказ ' + o.id + ': этап «' + o.stage + '» вне справочника');
+    if (!dayRe.test(String(o.date))) out.push('заказ ' + o.id + ': дата «' + o.date + '» не «гггг-мм-дд чч:мм»');
     const qty = o.pos.reduce((a, p) => a + p.qty, 0);
     const sum = o.pos.reduce((a, p) => a + p.qty * p.price, 0);
     if (qty !== o.items) out.push('заказ ' + o.id + ': позиций ' + o.items + ', в строках ' + qty);
     if (sum !== o.sum) out.push('заказ ' + o.id + ': сумма ' + o.sum + ', в строках ' + sum);
   });
+  // Выкуп = дата; у каждого выкупа должен быть хотя бы один заказ и посильнее одного,
+  // иначе сводная таблица выглядит пустой на фоне исходного кабинета.
+  const byDay = {};
+  D.orders.forEach((o) => { const d = String(o.date).slice(0, 10); (byDay[d] = byDay[d] || []).push(o); });
+  const days = Object.keys(byDay).sort();
+  if (!days.length) out.push('ни одного выкупа');
+  days.slice(-5).forEach((d) => { if (byDay[d].length < 5) out.push('выкуп ' + d + ': всего ' + byDay[d].length + ' заказ(ов)'); });
   const tabs = new Set(D.collectionTabs);
   Object.keys(D.collections).forEach((tab) => {
     if (!tabs.has(tab)) out.push('лишний таб сборов «' + tab + '»');
