@@ -1,5 +1,5 @@
 /* ============================================================
-   Win98 shell: desktop, window manager, top bar,
+   Win98 shell: full-page app window, floating windows,
    dialogs. No dependencies, works from file://
    ============================================================ */
 window.Shell = (function () {
@@ -26,40 +26,47 @@ window.Shell = (function () {
     const id = cfg.id || ('w' + (++seq));
     if (wins.has(id)) { focus(id); if (cfg.reveal) cfg.reveal(); return wins.get(id).api; }
 
+    const chrome = cfg.chrome !== false;
     const el = document.createElement('div');
-    el.className = 'win';
+    el.className = 'win' + (chrome ? '' : ' static');
     el.dataset.id = id;
-    const d = desk().getBoundingClientRect();
-    const w = Math.min(cfg.w || 620, d.width - 12);
-    const h = Math.min(cfg.h || 440, d.height - 12);
-    const pos = clampPos(cfg.x != null ? cfg.x : Math.round((d.width - w) / 2) + (wins.size * 18),
-      cfg.y != null ? cfg.y : Math.max(6, Math.round((d.height - h) / 2) - 20 + (wins.size * 14)), w, h);
-    el.style.left = pos.x + 'px';
-    el.style.top = pos.y + 'px';
-    el.style.width = w + 'px';
-    el.style.height = h + 'px';
+    if (chrome) {
+      const d = desk().getBoundingClientRect();
+      const w = Math.min(cfg.w || 620, d.width - 12);
+      const h = Math.min(cfg.h || 440, d.height - 12);
+      const pos = clampPos(cfg.x != null ? cfg.x : Math.round((d.width - w) / 2) + (wins.size * 18),
+        cfg.y != null ? cfg.y : Math.max(6, Math.round((d.height - h) / 2) - 20 + (wins.size * 14)), w, h);
+      el.style.left = pos.x + 'px';
+      el.style.top = pos.y + 'px';
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+    }
+
+    // В шапке основного окна вместо кнопок — системные часы с тем же утопленным фоном.
+    const right = chrome
+      ? '<span class="t-btns">' +
+      '<button class="tbtn" data-a="max" title="Развернуть" aria-label="Развернуть">&#9633;</button>' +
+      '<button class="tbtn" data-a="close" title="Закрыть" aria-label="Закрыть">&#10005;</button>' +
+      '</span>'
+      : '<div id="tray">' + ico('network', 14) + ico('clock', 14) + '<span id="clock"></span></div>';
 
     el.innerHTML =
       '<div class="titlebar">' +
       (cfg.icon ? '<span class="t-ico">' + ico(cfg.icon, 14) + '</span>' : '') +
       '<span class="t-text">' + esc(cfg.title) + '</span>' +
-      '<span class="t-btns">' +
-      '<button class="tbtn" data-a="min" title="Свернуть" aria-label="Свернуть">&#95;</button>' +
-      '<button class="tbtn" data-a="max" title="Развернуть" aria-label="Развернуть">&#9633;</button>' +
-      '<button class="tbtn" data-a="close" title="Закрыть" aria-label="Закрыть">&#10005;</button>' +
-      '</span></div>' +
+      right + '</div>' +
       (cfg.menu ? '<div class="menubar" data-menu></div>' : '') +
       (cfg.toolbar ? '<div class="toolbar" data-toolbar></div>' : '') +
       '<div class="win-body" data-body></div>' +
       (cfg.status !== false ? '<div class="statusbar" data-status><span class="cell panel grow">' + esc(cfg.status || 'Готово') + '</span><span class="cell panel" data-status2>' + esc(cfg.status2 || '') + '</span></div>' : '') +
-      '<div class="grip" data-grip style="position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:se-resize"></div>';
+      (chrome ? '<div class="grip" data-grip style="position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:se-resize"></div>' : '');
 
     desk().appendChild(el);
 
     const api = {
       id, el,
       body: el.querySelector('[data-body]'),
-      setTitle(t) { el.querySelector('.t-text').textContent = t; syncTaskbar(); },
+      setTitle(t) { el.querySelector('.t-text').textContent = t; },
       setStatus(t, t2) {
         const c = el.querySelector('[data-status]');
         if (!c) return;
@@ -74,29 +81,29 @@ window.Shell = (function () {
       status2(html) { const s = el.querySelector('[data-status2]'); if (s) s.innerHTML = html; }
     };
 
-    const rec = { id, el, api, cfg, min: false, max: false, restore: null };
+    const rec = { id, el, api, cfg, max: false, restore: null, static: !chrome };
     wins.set(id, rec);
 
-    // interactions
-    el.addEventListener('mousedown', () => focus(id), true);
-    el.querySelector('.titlebar').addEventListener('dblclick', (e) => {
-      if (e.target.closest('.tbtn')) return; toggleMax(id);
-    });
-    el.querySelector('.titlebar').addEventListener('pointerdown', (e) => startDrag(e, id));
-    el.querySelector('[data-grip]').addEventListener('pointerdown', (e) => startResize(e, id));
-    el.querySelectorAll('.tbtn').forEach((b) => b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const a = b.dataset.a;
-      if (a === 'close') { (cfg.onClose ? cfg.onClose(id) : true) !== false && close(id); }
-      if (a === 'min') minimize(id);
-      if (a === 'max') toggleMax(id);
-    }));
+    if (chrome) {
+      el.addEventListener('mousedown', () => focus(id), true);
+      el.querySelector('.titlebar').addEventListener('dblclick', (e) => {
+        if (e.target.closest('.tbtn')) return; toggleMax(id);
+      });
+      el.querySelector('.titlebar').addEventListener('pointerdown', (e) => startDrag(e, id));
+      el.querySelector('[data-grip]').addEventListener('pointerdown', (e) => startResize(e, id));
+      el.querySelectorAll('.tbtn').forEach((b) => b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const a = b.dataset.a;
+        if (a === 'close') { (cfg.onClose ? cfg.onClose(id) : true) !== false && close(id); }
+        if (a === 'max') toggleMax(id);
+      }));
+    }
+
     if (cfg.menu) api.menu(cfg.menu);
     if (cfg.toolbar && typeof cfg.toolbar === 'string') api.toolbar(cfg.toolbar);
     if (cfg.render) cfg.render(api);
 
     focus(id);
-    syncTaskbar();
     return api;
   }
 
@@ -106,36 +113,22 @@ window.Shell = (function () {
     r.el.remove();
     wins.delete(id);
     if (focused === id) focused = null;
-    const rest = [...wins.values()].filter((x) => !x.min);
+    const rest = [...wins.values()].filter((x) => !x.static);
     if (rest.length) focus(rest[rest.length - 1].id);
-    syncTaskbar();
   }
 
   function focus(id) {
     const r = wins.get(id);
-    if (!r) return;
-    if (r.min) { r.min = false; r.el.style.display = 'flex'; }
-    [...wins.values()].forEach((x) => x.el.classList.remove('active'));
+    if (!r || r.static) return;
+    [...wins.values()].forEach((x) => { if (!x.static) x.el.classList.remove('active'); });
     r.el.classList.add('active');
     r.el.style.zIndex = ++zTop;
     focused = id;
-    syncTaskbar();
-  }
-
-  function minimize(id) {
-    const r = wins.get(id);
-    if (!r) return;
-    r.min = true;
-    r.el.style.display = 'none';
-    focused = null;
-    const rest = [...wins.values()].filter((x) => !x.min);
-    if (rest.length) focus(rest[rest.length - 1].id);
-    syncTaskbar();
   }
 
   function toggleMax(id, force) {
     const r = wins.get(id);
-    if (!r) return;
+    if (!r || r.static) return;
     const d = desk().getBoundingClientRect();
     const want = force != null ? force : !r.max;
     if (want) {
@@ -147,7 +140,8 @@ window.Shell = (function () {
       Object.assign(r.el.style, { left: r.restore.l, top: r.restore.t, width: r.restore.w, height: r.restore.h });
       r.max = false;
     }
-    r.el.querySelector('[data-a="max"]').innerHTML = r.max ? '&#9635;' : '&#9633;';
+    const mb = r.el.querySelector('[data-a="max"]');
+    if (mb) mb.innerHTML = r.max ? '&#9635;' : '&#9633;';
     if (r.cfg.onResize) r.cfg.onResize(r.api);
     focus(id);
   }
@@ -236,25 +230,6 @@ window.Shell = (function () {
   }
   document.addEventListener('click', hideAll);
 
-  /* ---------- taskbar ---------- */
-  function syncTaskbar() {
-    const t = document.getElementById('tasks');
-    if (!t) return;
-    t.innerHTML = '';
-    [...wins.values()].forEach((r) => {
-      const b = document.createElement('button');
-      b.className = 'task' + (r.id === focused && !r.min ? ' on' : '');
-      b.innerHTML = (r.cfg.icon ? ico(r.cfg.icon, 14) : '') + '<span class="t">' + esc(r.cfg.title) + '</span>';
-      b.title = r.cfg.title;
-      b.addEventListener('click', () => {
-        if (r.id === focused && !r.min) minimize(r.id);
-        else if (r.min) { r.min = false; r.el.style.display = 'flex'; focus(r.id); }
-        else focus(r.id);
-      });
-      t.appendChild(b);
-    });
-  }
-
   /* ---------- dialogs ---------- */
   let lastForm = null;
   function dialog(cfg) {
@@ -308,13 +283,10 @@ window.Shell = (function () {
 
   /* ---------- boot ---------- */
   function boot(cfg) {
-    document.getElementById('taskbar').innerHTML =
-      '<div id="tasks"></div><span class="tb-sep"></span>' +
-      '<div id="tray">' + ico('network', 14) + ico('clock', 14) + '<span id="clock"></span></div>';
+    cfg.onBoot && cfg.onBoot();
     tickClock();
     setInterval(tickClock, 10000);
-    cfg.onBoot && cfg.onBoot();
   }
 
-  return { openWindow, close, focus, minimize, toggleMax, dialog, alert, confirm, prompt, boot, esc, wins, formValue, getWin: (id) => wins.get(id) && wins.get(id).api };
+  return { openWindow, close, focus, toggleMax, dialog, alert, confirm, prompt, boot, esc, wins, formValue, getWin: (id) => wins.get(id) && wins.get(id).api };
 })();

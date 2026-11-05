@@ -631,7 +631,10 @@
       { label: '&Сборы', items: D.collectionTabs.map((t) => ({ label: t, icon: 'box', action: () => { state.collTab = t; go('collections'); } })) },
       { label: '&Товары', action: () => go('goods') },
       { label: '&Баланс', action: () => go('balance') },
-      { label: '&Помощь', action: () => go('help') },
+      { label: '&Помощь', items: [
+        { label: 'Разделы помощи', icon: 'help', action: () => go('help') },
+        { label: 'О программе', icon: 'info', action: openAbout }
+      ] },
       { label: state.logged ? '&Выход' : '&Вход', action: () => {
           if (state.logged) { state.logged = false; save(); refreshAll(); Shell.alert('Вы вышли из кабинета.', 'Выход'); }
           else go('login');
@@ -662,14 +665,13 @@
     if (!api) {
       api = Shell.openWindow({
         id: MAIN, title: 'Садовод-посредник — ' + VIEWS[view].title, icon: 'globe',
-        x: 96, y: 6, w: 900, h: 560, menu: menuFor(), toolbar: toolbarFor(), status: 'Готово'
+        chrome: false, menu: menuFor(), toolbar: toolbarFor(), status: 'Готово'
       });
       mount(api, view);
       return;
     }
     api.setTitle('Садовод-посредник — ' + VIEWS[view].title);
     mount(api, view);
-    Shell.focus(MAIN);
   }
 
   function refreshAll() {
@@ -677,23 +679,9 @@
     if (api) { api.setTitle('Садовод-посредник — ' + VIEWS[state.view].title); mount(api, state.view); }
   }
 
-  /* ---------------- desktop ---------------- */
-  function buildDesktop() {
-    const box = document.getElementById('desk-icons');
-    const items = [
-      { v: 'sellers', ico: 'users', t: 'Поставщики' },
-      { v: 'orders', ico: 'cart', t: 'Заказы' },
-      { v: 'collections', ico: 'box', t: 'Сборы' },
-      { v: 'goods', ico: 'tag', t: 'Товары' },
-      { v: 'balance', ico: 'wallet', t: 'Баланс' },
-      { v: 'help', ico: 'help', t: 'Помощь' },
-      { v: 'login', ico: 'key', t: 'Вход' }
-    ];
-    box.innerHTML = items.map((i) =>
-      '<div class="dicon" data-v="' + i.v + '" tabindex="0">' + ico(i.ico, 32) + '<span class="lbl">' + i.t + '</span></div>').join('') +
-      '<div class="dicon" data-a="about" tabindex="0">' + ico('computer', 32) + '<span class="lbl">О программе</span></div>';
-    $all(box, '[data-v]').forEach((n) => n.addEventListener('dblclick', () => go(n.dataset.v)));
-    box.querySelector('[data-a="about"]').addEventListener('dblclick', () => Shell.openWindow({
+  /* ---------------- about ---------------- */
+  function openAbout() {
+    Shell.openWindow({
       id: 'about', title: 'О программе', icon: 'info', w: 420, h: 250, render(w) {
         w.body.innerHTML = '<div class="pad row"><div style="flex:none">' + ico('globe', 32) + '</div><div class="msg">' +
           '<b>Садовод-посредник 98</b><br>Версия 1.0 (сборка 2010)<br><br>' +
@@ -703,17 +691,17 @@
           '<div class="acts" style="display:flex;justify-content:center;padding-bottom:10px"><button class="btn def" data-x>OK</button></div>';
         w.body.querySelector('[data-x]').addEventListener('click', () => Shell.close('about'));
       }
-    }));
+    });
   }
 
   /* ---------------- boot ---------------- */
   window.addEventListener('DOMContentLoaded', () => {
     load();
-    buildDesktop();
     Shell.boot({ onBoot: () => go(state.logged ? 'sellers' : 'login') });
     window.addEventListener('resize', () => {
       const d = document.getElementById('desktop').getBoundingClientRect();
       [...Shell.wins.values()].forEach((r) => {
+        if (r.static) return;
         if (r.max) { Shell.toggleMax(r.id, true); return; }
         const w = Math.min(r.el.offsetWidth, d.width), h = Math.min(r.el.offsetHeight, d.height);
         r.el.style.left = Math.max(0, Math.min(r.el.offsetLeft, d.width - w)) + 'px';

@@ -1,7 +1,6 @@
 /* Пиксельные иконки 16x16 в духе Win98 (inline SVG, без внешних файлов). */
 window.ico = (function () {
   const P = {
-    computer: '<rect x="1" y="2" width="14" height="9" fill="#c0c0c0" stroke="#000"/><rect x="2" y="3" width="12" height="7" fill="#008080"/><rect x="4" y="12" width="8" height="2" fill="#c0c0c0" stroke="#000"/><rect x="2" y="14" width="12" height="1" fill="#808080"/>',
     folder: '<path d="M1 4h5l1 1h8v9H1z" fill="#ffd873" stroke="#8a6d1f"/><path d="M1 4h5l1 1h8" fill="none" stroke="#fff6d0"/>',
     folderOpen: '<path d="M1 4h5l1 1h7v2H3z" fill="#ffd873" stroke="#8a6d1f"/><path d="M2 7h13l-2 7H1z" fill="#ffe9a8" stroke="#8a6d1f"/>',
     doc: '<path d="M3 1h7l3 3v11H3z" fill="#fff" stroke="#000"/><path d="M10 1v3h3" fill="#c0c0c0" stroke="#000"/><path d="M5 7h6M5 9h6M5 11h4" stroke="#4a6f9a"/>',
