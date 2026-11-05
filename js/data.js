@@ -1,6 +1,6 @@
 /* Mock-данные сервиса «Садовод-посредник». Всё локальное, ничего не отправляется наружу. */
 window.DATA = {
-  rev: 2,
+  rev: 3,
 
   user: {
     name: 'Денис Красков',
@@ -75,5 +75,14 @@ delete window.SEED;
     D.collections[tab].forEach((c) => { if (!codes.has(c.sup)) out.push('сбор ' + c.id + ': нет поставщика ' + c.sup); });
   });
   D.balance.movements.forEach((m) => { if (m.ref && !ids.has(m.ref)) out.push('движение ' + m.date + ': заказ ' + m.ref + ' не найден'); });
+  D.suppliers.forEach((s) => {
+    const list = (D.reviews || {})[s.code];
+    if (!list || !list.length) { out.push('у поставщика ' + s.code + ' нет отзывов'); return; }
+    list.forEach((rv) => {
+      if (!(rv.stars >= 1 && rv.stars <= 5)) out.push('отзыв ' + s.code + ': ' + rv.stars + ' звёзд');
+      if (!rv.who || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(rv.date)) out.push('отзыв ' + s.code + ': нет автора или даты');
+    });
+  });
+  Object.keys(D.reviews || {}).forEach((code) => { if (!codes.has(code)) out.push('отзывы для несуществующего поставщика ' + code); });
   console.log(out.length ? 'ПРОВЕРКА: ' + out.join(' | ') : 'OK');
 })();

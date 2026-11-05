@@ -15,7 +15,7 @@
     collections: JSON.parse(JSON.stringify(D.collections)),
     balance: JSON.parse(JSON.stringify(D.balance)),
     goods: JSON.parse(JSON.stringify(D.goods)),
-    votes: {},
+    rates: {},
     filters: {
       sellers: { tc: '', cat: '', q: '', sort: 'rating', dir: -1, page: 1, list: 'all' },
       orders: { status: '', q: '' },
@@ -29,7 +29,7 @@
     try {
       localStorage.setItem(LS, JSON.stringify({
         rev: D.rev, logged: state.logged, fav: state.fav, black: state.black,
-        orders: state.orders, collections: state.collections, balance: state.balance, votes: state.votes
+        orders: state.orders, collections: state.collections, balance: state.balance, rates: state.rates
       }));
     } catch (e) { /* приватный режим — работаем в памяти */ }
   }
@@ -38,8 +38,11 @@
       const raw = localStorage.getItem(LS);
       if (!raw) return;
       const s = JSON.parse(raw);
-      /* данные в seed.js обновились — берём новый сид, избранное и заметки пользователя оставляем */
-      if (s.rev !== D.rev) { save(); return; }
+      /* данные в seed.js обновились — берём новый сид, избранные списки и свои отзывы оставляем */
+      if (s.rev !== D.rev) {
+        state.logged = !!s.logged; state.fav = s.fav || []; state.black = s.black || []; state.rates = s.rates || {};
+        save(); return;
+      }
       Object.assign(state, s);
     } catch (e) { /* ignore */ }
   }
@@ -103,17 +106,96 @@
     return { html: out + '</div>', pages, page };
   }
 
+  /* ---------------- звёздный рейтинг поставщиков ---------------- */
+  const REV_FORMS = ['отзыв', 'отзыва', 'отзывов'];
+  const plural = (n, forms) => {
+    const a = n % 10, b = n % 100;
+    return forms[a === 1 && b !== 11 ? 0 : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 1 : 2];
+  };
+  const revCount = (n) => n + ' ' + plural(n, REV_FORMS);
+
+  // Отзывы из сида + та оценка, которую поставил текущий пользователь.
+  function reviewsOf(code) {
+    const list = (D.reviews[code] || []).slice();
+    const mine = state.rates[code];
+    if (mine) list.unshift({ who: D.user.name, stars: mine.stars, date: mine.date, text: mine.text || '', mine: true });
+    return list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }
+  function ratingOf(code) {
+    const list = reviewsOf(code), dist = [0, 0, 0, 0, 0];
+    let sum = 0;
+    list.forEach((r) => { sum += r.stars; dist[r.stars - 1]++; });
+    return { avg: list.length ? sum / list.length : 0, count: list.length, dist, list };
+  }
+  const fmtAvg = (n) => (n ? n.toFixed(1).replace('.', ',') : '—');
+
+  // Серый ряд звёзд + золотой слой, обрезанный по средней: получается полоска, а не число.
+  const FIVE = '<span class="sg">★</span>'.repeat(5);
+  function starsBar(avg, code, big) {
+    return '<span class="stars' + (big ? ' big' : '') + '"' + (code ? ' data-stars="' + esc(code) + '"' : '') + '>' +
+      '<span class="sbase">' + FIVE + '</span>' +
+      '<span class="sfill" style="width:' + (avg / 5 * 100).toFixed(1) + '%">' + FIVE + '</span>' +
+      (code ? [1, 2, 3, 4, 5].map((i) => '<i class="hit" data-hit="' + i + '" style="left:' + ((i - 1) * 20) + '%" title="Оценка: ' + i + '"></i>').join('') : '') +
+      '</span>';
+  }
+
+  function bindStars(root, redraw) {
+    $all(root, '.stars[data-stars]').forEach((st) => {
+      const fill = st.querySelector('.sfill');
+      const real = fill.style.width;
+      $all(st, '.hit').forEach((h) => {
+        h.addEventListener('mouseenter', () => { st.classList.add('hot'); fill.style.width = h.dataset.hit * 20 + '%'; });
+        h.addEventListener('mouseleave', () => { st.classList.remove('hot'); fill.style.width = real; });
+        h.addEventListener('click', (e) => {
+          e.stopPropagation();
+          rateSupplier(st.dataset.stars, +h.dataset.hit, redraw);
+        });
+      });
+      st.addEventListener('dblclick', (e) => e.stopPropagation());
+    });
+  }
+
+  function rateSupplier(code, stars, redraw) {
+    const prev = state.rates[code];
+    state.rates[code] = { stars, date: nowStamp(), text: prev ? prev.text : '' };
+    save();
+    redraw();
+    Shell.dialog({
+      title: 'Ваш отзыв — ' + supBy(code).name, icon: 'star', html: true,
+      text: '<div style="margin-bottom:6px">' + starsBar(stars) + ' <b>' + stars + '</b> из 5 — оценка сохранена.</div>' +
+        '<div class="mut">Комментарий необязателен, но другим посредникам он полезен.</div>',
+      form: '<textarea data-cmt rows="3" style="width:100%;font:inherit" placeholder="Например: размер в размер, отправку задержала на два дня">' + esc(prev ? prev.text : '') + '</textarea>',
+      buttons: ['Сохранить', 'Без комментария']
+    }).then((v) => {
+      if (v !== 'Сохранить') return;
+      state.rates[code].text = (Shell.formValue('[data-cmt]') || '').trim();
+      save(); redraw();
+    });
+  }
+
+  function bindRatingUi(api, redraw) {
+    bindStars(api.body, redraw);
+    $all(api.body, '[data-reviews]').forEach((a) => a.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openReviews(a.dataset.reviews);
+    }));
+  }
+
   /* ---------------- view: Поставщики ---------------- */
   function viewSellers(api) {
     const f = state.filters.sellers;
+    const rt = {};
+    D.suppliers.forEach((s) => { rt[s.code] = ratingOf(s.code); });
     let rows = D.suppliers.filter((s) =>
       (!f.tc || s.tc === +f.tc) && (!f.cat || s.cat === f.cat) &&
       (!f.q || (s.name + s.code + s.note + s.cat).toLowerCase().includes(f.q.toLowerCase())) &&
       (f.list === 'all' || (f.list === 'fav' ? state.fav.includes(s.code) : state.black.includes(s.code))));
     rows = rows.slice().sort((a, b) => {
       const k = f.sort;
-      const va = k === 'rating' ? a.rating + (state.votes[a.code] || 0) : a[k], vb = k === 'rating' ? b.rating + (state.votes[b.code] || 0) : b[k];
-      return (va > vb ? 1 : va < vb ? -1 : 0) * f.dir;
+      let d;
+      if (k === 'rating') d = (rt[a.code].avg - rt[b.code].avg) || (rt[a.code].count - rt[b.code].count);
+      else d = a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : 0;
+      return d * f.dir;
     });
 
     const per = 8;
@@ -136,11 +218,11 @@
       '<span class="mut"> · найдено ' + rows.length + ' из ' + D.suppliers.length + '</span></div>' +
       '<div class="grid-wrap in" style="flex:1;margin:0 8px"><table class="grid"><thead><tr>' +
       th('Место', 'code', f) + th('', null, f) + th('Имя', 'name', f) + th('Статус', 'status', f) +
-      th('Чем торгует', 'cat', f) + th('Рейтинг', 'rating', f) + th('Обновления', 'upd', f) +
+      th('Чем торгует', 'cat', f) + th('Оценка', 'rating', f) + th('Обновления', 'upd', f) +
       th('ТЦ', 'tc', f) + th('Добавлен', 'added', f) + th('Действия', null, f) +
       '</tr></thead><tbody>' +
       (slice.length ? slice.map((s) => {
-        const v = state.votes[s.code] || 0;
+        const r = rt[s.code], mine = state.rates[s.code];
         return '<tr data-code="' + s.code + '">' +
           '<td><b>' + esc(s.code) + '</b><div class="sub">' + esc(s.pav) + '</div></td>' +
           '<td class="ctr"><span class="avatar"></span></td>' +
@@ -148,9 +230,9 @@
           '<div class="sub">' + (s.tg ? esc(s.tg) + ' ' : '') + (s.wa ? '· ' + esc(s.wa) + ' ' : '') + (s.vk ? '· ' + esc(s.vk) : '') + '</div></td>' +
           '<td>' + pill(s.status) + '</td>' +
           '<td>' + esc(s.cat) + '</td>' +
-          '<td class="num" style="white-space:nowrap"><b>' + (s.rating + v) + '</b> ' +
-          '<button class="btn sm" data-vote="1" title="Хорошо">▲</button>' +
-          '<button class="btn sm" data-vote="-1" title="Плохо">▼</button></td>' +
+          '<td class="rate">' + starsBar(r.avg, s.code) +
+          '<div class="sub"><b>' + fmtAvg(r.avg) + '</b> · <span class="link" data-reviews="' + s.code + '" title="Открыть отзывы">' +
+          revCount(r.count) + '</span>' + (mine ? ' <span class="pill blue">моя ' + mine.stars + '</span>' : '') + '</div></td>' +
           '<td class="sub">' + dt(s.upd) + '</td>' +
           '<td class="sub">' + esc(D.tc[s.tc]) + '</td>' +
           '<td class="sub">' + dt(s.added) + '</td>' +
@@ -159,7 +241,7 @@
       }).join('') : '<tr><td colspan="10" class="empty">Ничего не найдено. Измените фильтры.</td></tr>') +
       '</tbody></table></div>' +
       '<div class="toolbar" style="border-top:1px solid var(--sha)">' + pg.html +
-      '<span class="spacer"></span><span class="mut">Минималка и условия — в карточке поставщика (двойной клик по имени)</span></div>';
+      '<span class="spacer"></span><span class="mut">Клик по звезде — ваша оценка, клик по числу отзывов — все отзывы</span></div>';
 
     bindSort(api.body, f, () => mount(api, 'sellers'));
     $all(api.body, '.pg[data-pg]').forEach((b) => b.addEventListener('click', () => { f.page = +b.dataset.pg; mount(api, 'sellers'); }));
@@ -175,19 +257,52 @@
       state.filters.sellers = { tc: '', cat: '', q: '', sort: 'rating', dir: -1, page: 1, list: 'all' };
       mount(api, 'sellers');
     });
-    $all(api.body, '[data-open]').forEach((a) => a.addEventListener('click', () => openSupplier(a.dataset.open, api)));
-    $all(api.body, 'tr[data-code]').forEach((tr) => tr.addEventListener('dblclick', () => openSupplier(tr.dataset.code, api)));
-    $all(api.body, '[data-vote]').forEach((b) => b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const code = b.closest('tr').dataset.code, d = +b.dataset.vote;
-      state.votes[code] = (state.votes[code] || 0) + d; save(); mount(api, 'sellers');
-    }));
+    $all(api.body, '[data-open]').forEach((a) => a.addEventListener('click', () => openSupplier(a.dataset.open)));
+    $all(api.body, 'tr[data-code]').forEach((tr) => tr.addEventListener('dblclick', () => openSupplier(tr.dataset.code)));
+    bindRatingUi(api, () => mount(api, 'sellers'));
     $all(api.body, '[data-star]').forEach((b) => b.addEventListener('click', (e) => {
       e.stopPropagation();
       const code = b.closest('tr').dataset.code;
       toggleList(code); mount(api, 'sellers');
     }));
     api.setStatus('Поставщиков: ' + rows.length, 'ТЦ: ' + (f.tc === '' ? 'все' : D.tc[f.tc]));
+  }
+
+  function openReviews(code) {
+    const s = supBy(code);
+    const paint = (w) => {
+      const r = ratingOf(code), mine = state.rates[code];
+      const max = Math.max(1, Math.max.apply(null, r.dist));
+      w.body.innerHTML =
+        '<div class="pad rsum">' +
+        '<div class="row" style="align-items:center">' + starsBar(r.avg, code, true) +
+        '<b class="ravg">' + fmtAvg(r.avg) + '</b>' +
+        '<div class="rdist">' + [4, 3, 2, 1, 0].map((i) =>
+          '<div class="row" style="align-items:center">' +
+          '<span class="rstar">' + (i + 1) + '★</span>' +
+          '<span class="rbar"><span style="width:' + (r.dist[i] / max * 100).toFixed(0) + '%"></span></span>' +
+          '<span class="mut rnum">' + r.dist[i] + '</span></div>').join('') +
+        '</div></div>' +
+        '<div class="mut" style="margin-top:5px">' + esc(s.name) + ' (' + esc(code) + ') · ' + revCount(r.count) +
+        (mine ? ' · ваша оценка ' + mine.stars + '★' + (mine.text ? ' с комментарием' : '') : ' · вы ещё не оценивали') + '</div></div>' +
+        '<div class="toolbar"><b>Отзывы</b><span class="spacer"></span>' +
+        (mine ? '<button class="btn sm" data-a="clear">Убрать мою оценку</button>' : '') + '</div>' +
+        '<div class="revs in">' + (r.list.length ? r.list.map(rvHtml).join('')
+          : '<div class="empty">Отзывов пока нет — кликните по звезде выше.</div>') + '</div>';
+      bindRatingUi(w, () => { paint(w); refreshAll(); });
+      const c = w.body.querySelector('[data-a="clear"]');
+      if (c) c.addEventListener('click', () => { delete state.rates[code]; save(); paint(w); refreshAll(); });
+      w.setStatus(revCount(r.count), 'средняя ' + fmtAvg(r.avg));
+    };
+    paint(Shell.openWindow({ id: 'rev-' + code, title: 'Отзывы — ' + s.name, icon: 'star', w: 620, h: 460 }));
+  }
+
+  function rvHtml(r) {
+    return '<div class="rev' + (r.mine ? ' mine' : '') + '">' +
+      '<div class="row" style="align-items:center">' + starsBar(r.stars) +
+      '<b>' + esc(r.who) + '</b>' + (r.mine ? '<span class="pill blue">вы</span>' : '') +
+      '<span class="spacer"></span><span class="sub">' + dt(r.date) + '</span></div>' +
+      '<div class="rtext">' + (r.text ? esc(r.text) : '<span class="mut">Комментарий не оставлен.</span>') + '</div></div>';
   }
 
   function toggleList(code) {
@@ -715,41 +830,43 @@
   function openSupplier(code) {
     const s = supBy(code);
     if (!s || !s.code) return;
-    const v = state.votes[s.code] || 0;
-    Shell.openWindow({
-      id: 'sup-' + code, title: s.code + ' — ' + s.name, icon: 'users', w: 560, h: 400,
-      render(w) {
-        const goods = state.goods.filter((g) => g.sup === code);
-        w.body.innerHTML = '<div class="pad row" style="align-items:flex-start">' +
-          '<span class="avatar lg" style="width:64px;height:64px"></span>' +
-          '<div style="flex:1"><b style="font-size:13px">' + esc(s.name) + '</b> ' + pill(s.status) +
-          '<div class="mut">' + esc(s.pav) + ' · ' + esc(D.tc[s.tc]) + '</div>' +
-          '<div class="mut">Чем торгует: <b>' + esc(s.cat) + '</b> · Рейтинг: <b>' + (s.rating + v) + '</b></div></div>' +
-          '<div class="col" style="gap:4px">' +
-          (s.tg ? '<span class="link">' + ico('tg', 14) + ' ' + esc(s.tg) + '</span>' : '') +
-          (s.wa ? '<span class="link">' + ico('wa', 14) + ' ' + esc(s.wa) + '</span>' : '') +
-          (s.vk ? '<span class="link">' + ico('vk', 14) + ' ' + esc(s.vk) + '</span>' : '') + '</div></div>' +
-          '<div class="pad" style="padding-top:0"><div class="card">' + esc(s.note) + '</div>' +
-          '<div class="row wrap" style="margin-top:8px">' +
-          '<span class="pill">Минималка: ' + s.min + ' шт</span>' +
-          '<span class="pill">Отправка: ' + (s.send ? 'есть' : 'нет') + '</span>' +
-          '<span class="pill">Самовывоз: ' + (s.pickup ? 'есть' : 'нет') + '</span>' +
-          '<span class="pill">Обновлён: ' + dt(s.upd) + '</span></div></div>' +
-          '<div class="toolbar"><b>Товары точки (' + goods.length + ')</b></div>' +
-          '<div class="grid-wrap in" style="flex:1;margin:0 8px 8px"><table class="grid"><thead><tr><th>Артикул</th><th>Наименование</th><th>Размеры</th><th class="ctr">Остаток</th><th class="num">Цена</th></tr></thead><tbody>' +
-          (goods.length ? goods.map((g) => '<tr><td><b>' + esc(g.art) + '</b></td><td>' + esc(g.name) + '</td><td class="sub">' + esc(g.sizes || '—') + '</td><td class="ctr">' + g.qty + '</td><td class="num">' + money(g.price) + '</td></tr>').join('')
-            : '<tr><td colspan="5" class="empty">Товары этой точки не выгружены.</td></tr>') + '</tbody></table></div>' +
-          '<div class="toolbar"><button class="btn def" data-a="order">Заказать</button>' +
-          '<button class="btn" data-a="star">' + (state.fav.includes(code) ? 'Убрать из избранного' : 'В избранное') + '</button>' +
-          '<button class="btn" data-a="black">' + (state.black.includes(code) ? 'Убрать из ЧС' : 'В чёрный список') + '</button>' +
-          '<span class="spacer"></span><span class="mut">Добавлен в базу: ' + dt(s.added) + '</span></div>';
-        w.body.querySelector('[data-a="order"]').addEventListener('click', () => { Shell.close('sup-' + code); go('orders'); setTimeout(() => newOrderWizard(w), 40); });
-        w.body.querySelector('[data-a="star"]').addEventListener('click', () => { toggleList(code); Shell.close('sup-' + code); openSupplier(code); });
-        w.body.querySelector('[data-a="black"]').addEventListener('click', () => {
-          state.black = state.black.includes(code) ? state.black.filter((c) => c !== code) : state.black.concat(code);
-          state.fav = state.fav.filter((c) => c !== code); save(); Shell.close('sup-' + code); refreshAll();
-        });
-      }
-    });
+    const paint = (w) => {
+      const r = ratingOf(code), mine = state.rates[code];
+      const goods = state.goods.filter((g) => g.sup === code);
+      w.body.innerHTML = '<div class="pad row" style="align-items:flex-start">' +
+        '<span class="avatar lg" style="width:64px;height:64px"></span>' +
+        '<div style="flex:1"><b style="font-size:13px">' + esc(s.name) + '</b> ' + pill(s.status) +
+        '<div class="mut">' + esc(s.pav) + ' · ' + esc(D.tc[s.tc]) + '</div>' +
+        '<div class="mut">Чем торгует: <b>' + esc(s.cat) + '</b></div>' +
+        '<div class="row" style="align-items:center;margin-top:3px">' + starsBar(r.avg, code, true) +
+        '<b>' + fmtAvg(r.avg) + '</b><span class="link" data-reviews="' + esc(code) + '">' + revCount(r.count) + '</span>' +
+        (mine ? '<span class="pill blue">моя ' + mine.stars + '</span>' : '') + '</div></div>' +
+        '<div class="col" style="gap:4px">' +
+        (s.tg ? '<span class="link">' + ico('tg', 14) + ' ' + esc(s.tg) + '</span>' : '') +
+        (s.wa ? '<span class="link">' + ico('wa', 14) + ' ' + esc(s.wa) + '</span>' : '') +
+        (s.vk ? '<span class="link">' + ico('vk', 14) + ' ' + esc(s.vk) + '</span>' : '') + '</div></div>' +
+        '<div class="pad" style="padding-top:0"><div class="card">' + esc(s.note) + '</div>' +
+        '<div class="row wrap" style="margin-top:8px">' +
+        '<span class="pill">Минималка: ' + s.min + ' шт</span>' +
+        '<span class="pill">Отправка: ' + (s.send ? 'есть' : 'нет') + '</span>' +
+        '<span class="pill">Самовывоз: ' + (s.pickup ? 'есть' : 'нет') + '</span>' +
+        '<span class="pill">Обновлён: ' + dt(s.upd) + '</span></div></div>' +
+        '<div class="toolbar"><b>Товары точки (' + goods.length + ')</b></div>' +
+        '<div class="grid-wrap in" style="flex:1;margin:0 8px 8px"><table class="grid"><thead><tr><th>Артикул</th><th>Наименование</th><th>Размеры</th><th class="ctr">Остаток</th><th class="num">Цена</th></tr></thead><tbody>' +
+        (goods.length ? goods.map((g) => '<tr><td><b>' + esc(g.art) + '</b></td><td>' + esc(g.name) + '</td><td class="sub">' + esc(g.sizes || '—') + '</td><td class="ctr">' + g.qty + '</td><td class="num">' + money(g.price) + '</td></tr>').join('')
+          : '<tr><td colspan="5" class="empty">Товары этой точки не выгружены.</td></tr>') + '</tbody></table></div>' +
+        '<div class="toolbar"><button class="btn def" data-a="order">Заказать</button>' +
+        '<button class="btn" data-a="star">' + (state.fav.includes(code) ? 'Убрать из избранного' : 'В избранное') + '</button>' +
+        '<button class="btn" data-a="black">' + (state.black.includes(code) ? 'Убрать из ЧС' : 'В чёрный список') + '</button>' +
+        '<span class="spacer"></span><span class="mut">Добавлен в базу: ' + dt(s.added) + '</span></div>';
+      bindRatingUi(w, () => { paint(w); refreshAll(); });
+      w.body.querySelector('[data-a="order"]').addEventListener('click', () => { Shell.close('sup-' + code); go('orders'); setTimeout(() => newOrderWizard(w), 40); });
+      w.body.querySelector('[data-a="star"]').addEventListener('click', () => { toggleList(code); paint(w); });
+      w.body.querySelector('[data-a="black"]').addEventListener('click', () => {
+        state.black = state.black.includes(code) ? state.black.filter((c) => c !== code) : state.black.concat(code);
+        state.fav = state.fav.filter((c) => c !== code); save(); Shell.close('sup-' + code); refreshAll();
+      });
+    };
+    paint(Shell.openWindow({ id: 'sup-' + code, title: s.code + ' — ' + s.name, icon: 'users', w: 560, h: 420 }));
   }
 })();
