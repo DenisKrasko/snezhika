@@ -13,6 +13,18 @@ window.Shell = (function () {
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Знаки кнопок шапки рисуем геометрией, а не шрифтовой буквой: только так крестик
+  // становится крупным и стоит ровно по центру кнопки при любой неактивной расцветке
+  // (stroke="currentColor" наследует серый цвет неактивного окна).
+  const GLYPH = {
+    close: '<path d="M2 2 10 10M10 2 2 10"/>',
+    max: '<rect x="2" y="2" width="8" height="8" fill="none"/><path d="M2 4.4h8" stroke-width="2.6"/>',
+    restore: '<rect x="2" y="4" width="7" height="7" fill="none"/><path d="M4.5 2h7.5v7.5"/>'
+  };
+  const glyph = (kind) => '<svg width="14" height="14" viewBox="0 0 12 12" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.8" stroke-linecap="square" focusable="false" aria-hidden="true">' +
+    GLYPH[kind] + '</svg>';
+
   const clampPos = (x, y, w, h) => {
     const d = desk().getBoundingClientRect();
     return {
@@ -44,8 +56,8 @@ window.Shell = (function () {
 
     const right = chrome
       ? '<span class="t-btns">' +
-      '<button class="tbtn" data-a="max" title="Развернуть" aria-label="Развернуть">&#9633;</button>' +
-      '<button class="tbtn" data-a="close" title="Закрыть" aria-label="Закрыть">&#10005;</button>' +
+      '<button class="tbtn" data-a="max" title="Развернуть" aria-label="Развернуть">' + glyph('max') + '</button>' +
+      '<button class="tbtn" data-a="close" title="Закрыть" aria-label="Закрыть">' + glyph('close') + '</button>' +
       '</span>'
       : '';
 
@@ -176,7 +188,7 @@ window.Shell = (function () {
       r.max = false;
     }
     const mb = r.el.querySelector('[data-a="max"]');
-    if (mb) mb.innerHTML = r.max ? '&#9635;' : '&#9633;';
+    if (mb) mb.innerHTML = r.max ? glyph('restore') : glyph('max');
     if (r.cfg.onResize) r.cfg.onResize(r.api);
     focus(id);
   }
@@ -279,7 +291,7 @@ window.Shell = (function () {
       box.innerHTML =
         '<div class="titlebar"><span class="t-ico">' + ico(cfg.icon || 'info', 14) + '</span>' +
         '<span class="t-text">' + esc(cfg.title || 'Внимание') + '</span>' +
-        '<span class="t-btns"><button class="tbtn" data-x>&#10005;</button></span></div>' +
+        '<span class="t-btns"><button class="tbtn" data-x aria-label="Закрыть">' + glyph('close') + '</button></span></div>' +
         '<div class="row">' + icon + '<div class="msg">' + (cfg.html ? cfg.text : esc(cfg.text).replace(/\n/g, '<br>')) + '</div></div>' +
         (cfg.form ? '<div data-form style="padding:0 12px 6px">' + cfg.form + '</div>' : '') +
         '<div class="acts">' + (cfg.buttons || ['OK']).map((b, i) =>

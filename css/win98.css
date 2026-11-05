@@ -108,7 +108,7 @@ body.modal .win .tbtn { color: #808080; }
 }
 body.modal #desktop.haswin::after { content: none; }
 .titlebar {
-  height: 20px;
+  height: 24px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -124,11 +124,12 @@ body.modal #desktop.haswin::after { content: none; }
 .titlebar .t-text { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .t-btns { display: flex; gap: 2px; flex: none; }
 .tbtn {
-  width: 17px;
-  height: 15px;
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  border: none;
   background: var(--face);
   color: #000;
-  font: bold 9px Tahoma, sans-serif;
   display: grid;
   place-items: center;
   box-shadow: inset -1px -1px 0 0 var(--dk), inset 1px 1px 0 0 var(--hi),
@@ -196,6 +197,8 @@ body.modal #desktop.haswin::after { content: none; }
 }
 [data-toolbar] .btn.nav { min-width: 0; min-height: 32px; padding: 6px 18px; font-size: 13px; }
 [data-toolbar] .btn.nav:active, [data-toolbar] .btn.nav.on { padding: 7px 17px 5px 19px; }
+/* Кнопка клиента в меню: слева внутри самой кнопки стоит его аватарка. */
+[data-toolbar] .btn.nav.me { display: inline-flex; align-items: center; gap: 6px; }
 [data-toolbar] .msep { width: 2px; align-self: stretch; margin: 0 4px; box-shadow: inset 1px 0 0 var(--sha), inset -1px 0 0 var(--hi); }
 .statusbar {
   flex: none;
@@ -232,6 +235,9 @@ body.modal #desktop.haswin::after { content: none; }
 }
 .btn.sm { min-width: 0; min-height: 23px; padding: 2px 10px; }
 .btn.ico { min-width: 21px; padding: 2px; }
+/* Крупные переключатели «Избранные» и «Чёрный список» в поставщиках. */
+.btn.big { min-width: 190px; min-height: 40px; padding: 6px 18px; font: 13px Tahoma, sans-serif; }
+.btn.big:active, .btn.big.on { padding: 7px 17px 5px 19px; }
 
 input[type=text], input[type=password], input[type=number], input[type=search], select, textarea {
   font: 12px Tahoma, sans-serif;
@@ -320,18 +326,45 @@ table.grid th {
 table.grid th.sort-on { box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--dk), inset -2px -2px 0 0 var(--lite), inset 2px 2px 0 0 var(--sha); }
 table.grid th .arrow { font-size: 8px; margin-left: 3px; }
 table.grid td { padding: 3px 6px; border-bottom: 1px solid #e4e4e4; vertical-align: top; }
-table.grid tr:hover td { background: #f3f3f3; }
-table.grid tr.sel td { background: var(--sel); color: #fff; }
-table.grid tr.sel:hover td { background: var(--sel); }
+/* Чередование строк: в длинном списке глазу за что-то цепляться. Подсветка по наведению
+   — голубоватая, поэтому читается и на белой, и на серой полосе. .sel идёт последним,
+   чтобы выделение строки не перекрывалось полосами. */
+table.grid tbody tr:nth-child(even) td { background: #f2f2f2; }
+table.grid tbody tr:hover td { background: #dce3f0; }
+table.grid tbody tr.sel td { background: var(--sel); color: #fff; }
+table.grid tbody tr.sel:hover td { background: var(--sel); }
 table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.grid td.ctr { text-align: center; }
 table.grid .sub { color: var(--gray-text); font-size: 10px; }
 table.grid tr.sel .sub { color: #d6d6ff; }
-.avatar {
-  width: 22px; height: 22px; display: inline-block; vertical-align: middle;
-  background: linear-gradient(135deg, #b8c9dd, #7d94b4); border: 1px solid #6a86a8;
+/* Заглушка вместо фото поставщика: тот же нейтральный человек, что стоит по умолчанию
+   в кнопке клиента, на сером фоне Win98. Рамка и outer-бокс как у картинки, поэтому
+   колонка не меняет ширину, а плашка не сливается с белой или полосатой строкой. */
+.supava {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+  background: var(--face); border: 1px solid #6a86a8;
 }
-.avatar.lg { width: 32px; height: 32px; }
+/* Фото поставщика в списке и в карточке: рамка и фон как у заглушки, поэтому строка
+   не меняет ширину колонки, когда у части поставщиков картинки нет. */
+img.supimg {
+  display: inline-block; vertical-align: middle; object-fit: cover;
+  border: 1px solid #6a86a8; background: #fff;
+}
+
+/* Своя аватарка клиента (загружается в личном кабинете): квадрат в рамке того же цвета,
+   что и жилет значка человека по умолчанию. Рамка входит в ширину (box-sizing: border-box),
+   поэтому место в кнопке не прыгает. */
+img.ava { display: block; border: 1px solid #4a6f9a; background: #fff; }
+.avaprev { flex: none; line-height: 0; }
+
+/* Личный кабинет: секции в две колонки. input и select по умолчанию не ужимаются ниже
+   своей ширины (~180px), из-за чего колонка растягивалась и вторая уезжала вниз;
+   min-width:0 возвращает им право сжиматься, а строки внутри секций переносятся,
+   если места всё же не хватает. На узком окне flex-wrap самой колонки оставляет
+   секции одна под другой. */
+.cab input, .cab select { min-width: 0; }
+.cab .cab-col { flex: 1 1 280px; min-width: 0; }
+.cab .group .row { flex-wrap: wrap; }
 
 /* ---------- tree ---------- */
 .tree { background: #fff; padding: 4px; overflow: auto; flex: 1; min-height: 0; }
@@ -404,7 +437,13 @@ table.grid tr.sel .sub { color: #d6d6ff; }
 .link { color: #0000ee; text-decoration: underline; cursor: default; }
 .link:hover { color: #ee0000; }
 .pager { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; }
-.pager .pg { min-width: 28px; padding: 4px 9px; font: 12px Tahoma, sans-serif; text-align: center; background: var(--face); box-shadow: inset -1px -1px 0 0 var(--dk), inset 1px 1px 0 0 var(--hi), inset -2px -2px 0 0 var(--sha), inset 2px 2px 0 0 var(--lite); }
+.pager .pg {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 30px; min-height: 30px; padding: 0 8px;
+  font: 12px Tahoma, sans-serif; text-align: center;
+  background: var(--face);
+  box-shadow: inset -1px -1px 0 0 var(--dk), inset 1px 1px 0 0 var(--hi), inset -2px -2px 0 0 var(--sha), inset 2px 2px 0 0 var(--lite);
+}
 .pager .pg.on { font-weight: bold; box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--dk), inset -2px -2px 0 0 var(--lite), inset 2px 2px 0 0 var(--sha); }
 .pager .gap { color: var(--sha); padding: 0 2px; }
 .empty { padding: 24px; text-align: center; color: var(--gray-text); }

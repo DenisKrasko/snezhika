@@ -16,6 +16,9 @@
     balance: JSON.parse(JSON.stringify(D.balance)),
     goods: JSON.parse(JSON.stringify(D.goods)),
     rates: {},
+    // Правая кнопка меню — это сам клиент; её настройки (уведомления, тариф, контакты)
+    // живут здесь и, как и остальное, пишутся в localStorage.
+    account: { email: D.user.email, dob: D.user.dob, city: D.user.city, phone: D.user.phone, notif: true, tariff: D.user.tariff, avatar: '' },
     filters: {
       sellers: { tc: '', cat: '', q: '', sort: 'rating', dir: -1, page: 1, list: 'all' },
       orders: { status: '', q: '' },
@@ -25,13 +28,17 @@
     collTab: 'Мои'
   };
 
+  // false — хранилище переполнено или недоступен приватный режим; зовущий код решает,
+  // как об этом сказать (аватарка, например, крупнее остальных записей).
   function save() {
     try {
       localStorage.setItem(LS, JSON.stringify({
         rev: D.rev, logged: state.logged, fav: state.fav, black: state.black,
-        orders: state.orders, collections: state.collections, balance: state.balance, rates: state.rates
+        orders: state.orders, collections: state.collections, balance: state.balance, rates: state.rates,
+        account: state.account
       }));
-    } catch (e) { /* приватный режим — работаем в памяти */ }
+      return true;
+    } catch (e) { return false; }
   }
   function load() {
     try {
@@ -63,6 +70,30 @@
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   };
   const $all = (root, sel) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+
+  // Аватар клиента: своя картинка (обрезанная квадратом и уменьшенная до 128 px) или
+  // нейтральный значок человека из icons.js — он стоит и до загрузки фото, и после
+  // удаления, поэтому картинка возвращается ровно та же. src подставляется только если
+  // это data-изображение: в хранилище не должно быть ничего другого.
+  const AVA_SIDE = 128;
+  function avatarHtml(px) {
+    const src = state.account.avatar;
+    return src && src.indexOf('data:image/') === 0
+      ? '<img class="ava" src="' + src + '" width="' + px + '" height="' + px + '" alt="Аватар клиента">'
+      : ico('user', px);
+  }
+
+  // Картинка поставщика. Фото есть не у всех, и вместо него та же серая плашка с
+  // нейтральным человеком, что стоит по умолчанию у клиента: рамка и outer-размер
+  // совпадают с фото, поэтому колонка в списке не гуляет от строки к строке.
+  const SUP_THUMB = 64;
+  function supImgHtml(s, px) {
+    return s.img
+      ? '<img class="supimg" src="' + s.img + '" width="' + px + '" height="' + px +
+        '" loading="lazy" alt="Витрина: ' + esc(s.name) + '">'
+      : '<span class="supava" style="width:' + px + 'px;height:' + px + 'px">' +
+        ico('user', px - 2) + '</span>';
+  }
 
   function moveBalance(sum, type, ref, comment) {
     state.balance.current += sum;
@@ -198,7 +229,10 @@
       return d * f.dir;
     });
 
-    const per = 8;
+    // Строка поставщика высокая (две строки текста + звёзды), поэтому восемь штук на экран
+    // было тесно, а страниц — слишком много. Держим тот же объём, что и в «Заказах»,
+    // где список идёт одной простынёй: 40 записей, дальше пагинация.
+    const per = 40;
     const pg = pager(rows.length, f.page, per);
     const slice = rows.slice((pg.page - 1) * per, pg.page * per);
 
@@ -208,12 +242,15 @@
       D.tc.map((t, i) => '<option value="' + i + '"' + (f.tc == i ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select>' +
       '<span class="mut">Категория:</span><select data-f="cat"><option value="">все</option>' +
       D.categories.slice(1).map((c) => '<option' + (f.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>' +
-      '<span class="mut">Список:</span><select data-f="list">' +
-      '<option value="all"' + (f.list === 'all' ? ' selected' : '') + '>Все поставщики</option>' +
-      '<option value="fav"' + (f.list === 'fav' ? ' selected' : '') + '>Избранные (' + state.fav.length + ')</option>' +
-      '<option value="black"' + (f.list === 'black' ? ' selected' : '') + '>Чёрный список (' + state.black.length + ')</option></select>' +
       '<span class="spacer"></span><input type="search" data-f="q" placeholder="Поиск по имени, месту, описанию" value="' + esc(f.q) + '" style="width:230px">' +
       '<button class="btn sm" data-a="reset">Сброс</button></div>' +
+      // Три крупных переключателя вместо прежнего выпадающего списка: активный вдавлен.
+      '<div class="toolbar">' +
+      '<button class="btn big' + (f.list === 'all' ? ' on' : '') + '" data-list="all">' + ico('users', 16) + ' Все (' + D.suppliers.length + ')</button>' +
+      '<button class="btn big' + (f.list === 'fav' ? ' on' : '') + '" data-list="fav">' + ico('star', 16) + ' Избранные (' + state.fav.length + ')</button>' +
+      '<button class="btn big' + (f.list === 'black' ? ' on' : '') + '" data-list="black">' + ico('stop', 16) + ' Чёрный список (' + state.black.length + ')</button>' +
+      '<span class="mut" style="margin-left:8px">' + (f.list === 'all' ? 'показаны все поставщики'
+        : f.list === 'fav' ? 'показаны только избранные' : 'показан только чёрный список') + '</span></div>' +
       '<div class="pad" style="padding-bottom:6px"><b style="font-size:12px">Бесплатная база поставщиков Садовод, Люблино, Южные ворота</b>' +
       '<span class="mut"> · найдено ' + rows.length + ' из ' + D.suppliers.length + '</span></div>' +
       '<div class="grid-wrap in" style="flex:1;margin:0 8px"><table class="grid"><thead><tr>' +
@@ -225,7 +262,7 @@
         const r = rt[s.code], mine = state.rates[s.code];
         return '<tr data-code="' + s.code + '">' +
           '<td><b>' + esc(s.code) + '</b><div class="sub">' + esc(s.pav) + '</div></td>' +
-          '<td class="ctr"><span class="avatar"></span></td>' +
+          '<td class="ctr">' + supImgHtml(s, SUP_THUMB) + '</td>' +
           '<td><span class="link" data-open="' + s.code + '">' + esc(s.name) + '</span>' +
           '<div class="sub">' + (s.tg ? esc(s.tg) + ' ' : '') + (s.wa ? '· ' + esc(s.wa) + ' ' : '') + (s.vk ? '· ' + esc(s.vk) : '') + '</div></td>' +
           '<td>' + pill(s.status) + '</td>' +
@@ -245,6 +282,11 @@
 
     bindSort(api.body, f, () => mount(api, 'sellers'));
     $all(api.body, '.pg[data-pg]').forEach((b) => b.addEventListener('click', () => { f.page = +b.dataset.pg; mount(api, 'sellers'); }));
+    $all(api.body, '[data-list]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.list;
+      f.list = f.list === k ? 'all' : k;
+      f.page = 1; mount(api, 'sellers');
+    }));
     $all(api.body, '[data-f]').forEach((i) => i.addEventListener('change', () => {
       f[i.dataset.f] = i.value; f.page = 1; mount(api, 'sellers');
     }));
@@ -688,6 +730,201 @@
     api.setStatus('Тем: ' + D.help.length, '');
   }
 
+  /* ---------------- view: Личный кабинет ---------------- */
+  // Открывается по кнопке с именем клиента в меню — как на asya.sadpos.ru/users:
+  // код клиента, контакты, уведомления, баланс, тариф, реферальная ссылка и полезные ссылки.
+  function viewAccount(api) {
+    if (!state.logged) return needLogin(api, 'Личный кабинет');
+    const a = state.account;
+    const tariffs = D.user.tariffs;
+    const cur = tariffs.find((t) => t.t === a.tariff) || tariffs[0];
+    const lbl = (t) => '<span class="mut" style="width:118px;flex:none">' + t + '</span>';
+    const fs = (legend, inner) => '<fieldset class="group"><legend>' + legend + '</legend>' + inner + '</fieldset>';
+
+    api.body.innerHTML =
+      '<div class="in cab" style="flex:1;min-height:0;overflow:auto;margin:8px">' +
+      '<div class="pad">' +
+      '<div class="row wrap" style="align-items:flex-start;gap:10px">' +
+      '<div style="flex:none">' + avatarHtml(64) + '</div>' +
+      '<div class="col" style="gap:2px">' +
+      '<div style="font-size:14px"><b>' + esc(D.user.name) + '</b></div>' +
+      '<div class="mut">Код клиента <b style="color:#000080;font-size:13px">№' + D.user.code + '</b> · в кабинете с ' + dt(D.user.since) + '</div>' +
+      '<div class="mut">Группа: <b>' + esc(D.user.group) + '</b> · посредник: ' + esc(D.user.manager) + '</div>' +
+      '<div class="row" style="gap:10px;margin-top:4px">' +
+      '<span class="link" data-soc="vk">' + ico('vk', 14) + ' Группа ВКонтакте</span>' +
+      '<span class="link" data-soc="tg">' + ico('tg', 14) + ' Товары группы в Telegram</span></div>' +
+      '</div>' +
+      '<span class="spacer"></span>' +
+      '<div class="card" style="min-width:180px"><div class="mut">Баланс</div>' +
+      '<div style="font-size:18px"><b>' + money(state.balance.current) + '</b></div>' +
+      '<div class="mut" style="margin-top:2px">Доступно: ' + money(state.balance.current - state.balance.frozen) + '</div>' +
+      '<span class="link" data-a="tobal">Пополнить и история &raquo;</span></div>' +
+      '</div>' +
+      '<div class="hr"></div>' +
+      '<div class="row wrap" style="align-items:flex-start;gap:8px">' +
+
+      '<div class="col cab-col">' +
+      fs('Данные пользователя',
+        '<div class="col">' +
+        '<div class="row">' + lbl('Имя пользователя:') + '<input data-k="login" value="' + esc(D.user.login) + '" readonly style="flex:1 1 140px" title="Логин задаёт посредник">' +
+        '<button class="btn sm" data-a="phone">' + ico('info', 14) + ' Телефон</button></div>' +
+        '<div class="row">' + lbl('Email:') + '<input data-k="email" value="' + esc(a.email) + '" style="flex:1 1 140px"></div>' +
+        '<div class="row">' + lbl('Дата рождения:') + '<input data-k="dob" value="' + esc(a.dob) + '" style="width:110px;flex:none">' +
+        '<span class="mut">формат: дд.мм.гггг</span></div>' +
+        '<div class="row">' + lbl('Город:') + '<input data-k="city" value="' + esc(a.city) + '" style="flex:1 1 140px"></div>' +
+        '<div class="row">' + lbl('Аватар:') +
+        '<span class="avaprev">' + avatarHtml(32) + '</span>' +
+        '<span class="row" style="gap:3px;flex:none">' +
+        '<button class="btn sm" data-a="ava">Загрузить…</button>' +
+        '<button class="btn sm" data-a="ava-del">Удалить</button></span>' +
+        '<input type="file" accept="image/*" data-k="avafile" style="display:none"></div>' +
+        '<div class="row" style="margin-top:2px">' +
+        '<button class="btn def" data-a="save">' + ico('save', 14) + ' Сохранить</button>' +
+        '<button class="btn" data-a="newpass">' + ico('key', 14) + ' Задать новый пароль</button></div>' +
+        '</div>') +
+      fs('Настройка уведомлений',
+        '<label class="chk" style="margin-bottom:4px"><input type="checkbox" data-k="notif"' + (a.notif ? ' checked' : '') +
+        '><span class="box"></span>Получать уведомления о невыкупленных заказах во время закупки</label>' +
+        '<div class="mut">' + (a.notif
+          ? 'Напоминание придёт в бота за сутки до закрытия сбора.'
+          : 'Напоминаний не будет: пропущенный выкуп зависит только от вас.') + '</div>') +
+      '</div>' +
+
+      '<div class="col cab-col">' +
+      fs('Выбор тарифа',
+        '<div class="row">' + lbl('Тариф:') +
+        '<select data-k="tariff" style="flex:1 1 140px">' + tariffs.map((t) => '<option' + (a.tariff === t.t ? ' selected' : '') + '>' + esc(t.t) + '</option>').join('') + '</select>' +
+        '<button class="btn def" data-a="pay">Оплатить</button></div>' +
+        '<div class="mut" style="margin-top:4px">' + esc(cur.note) + ' · ' +
+        (cur.fee ? 'абонентская плата <b>' + money(cur.fee) + '</b> в месяц, списывается с баланса.' : 'абонентской платы нет.') + '</div>') +
+      fs('Ссылка для регистрации друзей',
+        '<div class="row"><input data-k="ref" value="' + esc(D.user.ref) + '" readonly style="flex:1 1 140px">' +
+        '<button class="btn sm" data-a="copy">Копировать</button></div>' +
+        '<ul style="margin:6px 0 0 18px;padding:0">' +
+        '<li class="mut">За каждого зарегистрированного по ссылке — 300 ₽ на ваш баланс после его первого выкупа.</li>' +
+        '<li class="mut">Друг получит месяц тарифа «Оптовый» бесплатно, обязательств это никаких не накладывает.</li></ul>') +
+      fs('Полезные ссылки',
+        '<div class="col" style="gap:3px">' + D.user.links.map((l, i) =>
+          '<span class="link" data-link="' + i + '">' + ico('globe', 12) + ' ' + esc(l.t) + '</span>').join('') + '</div>') +
+      '</div>' +
+
+      '</div></div></div>';
+
+    api.body.querySelector('[data-a="tobal"]').addEventListener('click', () => go('balance'));
+    $all(api.body, '[data-soc]').forEach((s) => s.addEventListener('click', () => {
+      Shell.alert('Откроется ' + (s.dataset.soc === 'vk' ? 'группа посредника ВКонтакте' : 'канал группы в Telegram') +
+        '.\nВ демо-версии ссылки отключены — напишите ' + D.user.manager + ' напрямую.', 'Сообщество');
+    }));
+    api.body.querySelector('[data-a="phone"]').addEventListener('click', () =>
+      Shell.alert('Телефон: ' + a.phone + '\nДоступен с 10:00 до 20:00 по Москве.', 'Контакты'));
+    const file = api.body.querySelector('[data-k="avafile"]');
+    api.body.querySelector('[data-a="ava"]').addEventListener('click', () => file.click());
+    api.body.querySelector('[data-a="ava-del"]').addEventListener('click', () => {
+      if (!a.avatar) { Shell.alert('Своя аватарка не загружена — сейчас стоит значок человека по умолчанию.', 'Аватар'); return; }
+      a.avatar = ''; save();
+      mount(api, 'account');
+      Shell.alert('Аватарку убрали, вернули значок человека по умолчанию.', 'Аватар');
+    });
+    // Файл читаем локально: обрезаем по центру до квадрата и уменьшаем до 128 px, чтобы
+    // фото весило в localStorage десятки килобайт, а не мегабайты. Наружу ничего не уходит.
+    file.addEventListener('change', () => {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const c = document.createElement('canvas');
+        c.width = c.height = AVA_SIDE;
+        const g = c.getContext('2d');
+        g.fillStyle = '#fff';
+        g.fillRect(0, 0, AVA_SIDE, AVA_SIDE);
+        const side = Math.min(img.naturalWidth, img.naturalHeight);
+        g.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, AVA_SIDE, AVA_SIDE);
+        const prev = a.avatar;
+        a.avatar = c.toDataURL('image/jpeg', 0.85);
+        if (!save()) {
+          a.avatar = prev;
+          Shell.alert('Картинка не влезла в локальное хранилище — оставили прежнюю аватарку.', 'Аватар');
+          return;
+        }
+        mount(api, 'account');
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        Shell.alert('«' + f.name + '» не читается как картинка. Возьмите JPG, PNG или GIF.', 'Аватар');
+      };
+      img.src = url;
+    });
+    api.body.querySelector('[data-a="save"]').addEventListener('click', () => {
+      const v = (k) => api.body.querySelector('[data-k="' + k + '"]').value.trim();
+      const email = v('email');
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        Shell.alert('Проверьте адрес почты: нужен вид name@domain.ru.', 'Email не похож на адрес');
+        return;
+      }
+      if (!/^\d{2}\.\d{2}\.\d{4}$/.test(v('dob'))) {
+        Shell.alert('Дату рождения пишите в формате дд.мм.гггг, например 24.06.1997.', 'Неверный формат даты');
+        return;
+      }
+      a.email = email; a.dob = v('dob'); a.city = v('city');
+      save();
+      Shell.alert('Данные сохранены. Их увидит только Ваш посредник.', 'Изменения сохранены');
+      api.setStatus('Сохранено: ' + (email || 'без почты'), 'Город: ' + (a.city || 'не указан'));
+    });
+    api.body.querySelector('[data-a="newpass"]').addEventListener('click', () => {
+      Shell.dialog({
+        title: 'Новый пароль', icon: 'key',
+        text: 'Придумайте пароль от входа в кабинет. Старый перестанет работать сразу.',
+        form: '<input type="password" style="width:220px">',
+        buttons: ['Задать', 'Отмена']
+      }).then((v) => {
+        if (v !== 'Задать') return;
+        const p = Shell.formValue('[data-form] input') || '';
+        if (p.length < 5) { Shell.alert('Пароль короче пяти символов — возьмите длиннее.', 'Слабый пароль'); return; }
+        Shell.alert('Пароль обновлён. ' + (a.email ? 'Копия ушла на ' + a.email + '.' : 'Почту не указали — сохраните пароль сами.'), 'Готово');
+      });
+    });
+    api.body.querySelector('[data-k="notif"]').addEventListener('change', (e) => {
+      a.notif = e.target.checked; save(); mount(api, 'account');
+    });
+    api.body.querySelector('[data-k="tariff"]').addEventListener('change', (e) => {
+      a.tariff = e.target.value; save(); mount(api, 'account');
+    });
+    api.body.querySelector('[data-a="pay"]').addEventListener('click', () => {
+      if (!cur.fee) { Shell.alert('Тариф «' + cur.t + '» без абонентской платы — платить не за что.', 'Выбор тарифа'); return; }
+      Shell.confirm('Списать ' + money(cur.fee) + ' с баланса за месяц тарифа «' + cur.t + '»?\n' +
+        cur.note, 'Оплата тарифа').then((yes) => {
+        if (!yes) return;
+        if (state.balance.current - state.balance.frozen < cur.fee) {
+          Shell.alert('Свободных денег не хватает: доступно ' + money(state.balance.current - state.balance.frozen) +
+            '.', 'Оплата тарифа');
+          return;
+        }
+        moveBalance(-cur.fee, 'Списание', '', 'Тариф «' + cur.t + '» на месяц');
+        Shell.alert('Тариф «' + cur.t + '» оплачен, ' + money(cur.fee) + ' списано с баланса.', 'Готово');
+      });
+    });
+    api.body.querySelector('[data-a="copy"]').addEventListener('click', () => {
+      const i = api.body.querySelector('[data-k="ref"]');
+      i.select();
+      const manual = 'Ссылка выделена — скопируйте вручную (Ctrl+C):\n' + D.user.ref;
+      const done = (text) => Shell.alert(text, 'Копирование');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(D.user.ref).then(() => done('Ссылка скопирована в буфер обмена.'), () => done(manual));
+      } else {
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { /* старый браузер — оставим выделение */ }
+        done(ok ? 'Ссылка скопирована в буфер обмена.' : manual);
+      }
+    });
+    $all(api.body, '[data-link]').forEach((s) => s.addEventListener('click', () => {
+      const l = D.user.links[+s.dataset.link];
+      Shell.alert(l.t + '\n' + l.d, 'Полезная ссылка');
+    }));
+    api.setStatus('Клиент №' + D.user.code + ', тариф «' + cur.t + '»', 'Группа: ' + D.user.group);
+  }
+
   /* ---------------- view: Вход ---------------- */
   function viewLogin(api) {
     api.body.innerHTML =
@@ -731,19 +968,23 @@
     goods: { title: 'Товары', render: viewGoods },
     balance: { title: 'Баланс', render: viewBalance },
     help: { title: 'Помощь', render: viewHelp },
+    account: { title: 'Личный кабинет', render: viewAccount },
     login: { title: 'Вход', render: viewLogin }
   };
 
   const MAIN = 'main';
 
-  // Единственное меню кабинета: ровная строка кнопок без иконок.
+  // Единственное меню кабинета: ровная строка текстовых кнопок.
   // Вложенные команды («Избранные», «Чёрный список», вкладки сборов, «Создать заказ») живут
   // в самих разделах, отдельное выпадающее меню для них не нужно.
   function toolbarFor() {
     const item = (k) => '<button class="btn nav' + (state.view === k ? ' on' : '') + '" data-v="' + k + '">' + esc(VIEWS[k].title) + '</button>';
+    // Кнопка с именем клиента ведёт в личный кабинет; форма входа нужна только гостю.
+    const me = state.logged ? 'account' : 'login';
     return ['sellers', 'orders', 'collections', 'goods', 'balance', 'help'].map(item).join('') +
       '<span class="msep"></span>' +
-      '<button class="btn nav' + (state.view === 'login' ? ' on' : '') + '" data-v="login">' + (state.logged ? esc(D.user.name) : 'Вход') + '</button>' +
+      '<button class="btn nav me' + (state.view === me ? ' on' : '') + '" data-v="' + me + '">' +
+      (state.logged ? avatarHtml(16) + esc(D.user.name) : 'Вход') + '</button>' +
       '<button class="btn nav" data-a="about">О программе</button>' +
       (state.logged ? '<button class="btn nav" data-a="exit">Выход</button>' : '') +
       '<span class="spacer"></span><span class="mut">Баланс: <b>' + money(state.balance.current) + '</b></span>';
@@ -757,7 +998,7 @@
     if (ab) ab.onclick = openAbout;
     const ex = api.el.querySelector('[data-a="exit"]');
     if (ex) ex.onclick = () => {
-      state.logged = false; save(); refreshAll();
+      state.logged = false; save(); go('login');
       Shell.alert('Вы вышли из кабинета.', 'Выход');
     };
     VIEWS[view].render(api);
@@ -821,7 +1062,7 @@
       const r = ratingOf(code), mine = state.rates[code];
       const goods = state.goods.filter((g) => g.sup === code);
       w.body.innerHTML = '<div class="pad row" style="align-items:flex-start">' +
-        '<span class="avatar lg" style="width:64px;height:64px"></span>' +
+        supImgHtml(s, 64) +
         '<div style="flex:1"><b style="font-size:13px">' + esc(s.name) + '</b> ' + pill(s.status) +
         '<div class="mut">' + esc(s.pav) + ' · ' + esc(D.tc[s.tc]) + '</div>' +
         '<div class="mut">Чем торгует: <b>' + esc(s.cat) + '</b></div>' +
