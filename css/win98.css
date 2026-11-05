@@ -94,7 +94,6 @@ body {
   box-shadow: none;
 }
 .win.static .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
-.win.static #tray { flex: none; min-height: 0; padding: 1px 6px; gap: 5px; }
 .win.active .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
 /* Модальный диалог активен, а всё, что под затемнением, уходит в неактивный вид. */
 .dlg .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
@@ -185,6 +184,19 @@ body.modal #desktop.haswin::after { content: none; }
   flex: none;
   flex-wrap: wrap;
 }
+/* Одиночная кнопка «Закрыть» в окне без других кнопок — по центру строки. */
+.toolbar.mid { justify-content: center; }
+
+/* Единственное меню кабинета: одна ровная строка кнопок, без иконок. */
+[data-toolbar] {
+  gap: 2px;
+  padding: 3px;
+  border-bottom: 1px solid var(--sha);
+  box-shadow: 0 1px 0 0 var(--hi);
+}
+[data-toolbar] .btn.nav { min-width: 0; min-height: 32px; padding: 6px 18px; font-size: 13px; }
+[data-toolbar] .btn.nav:active, [data-toolbar] .btn.nav.on { padding: 7px 17px 5px 19px; }
+[data-toolbar] .msep { width: 2px; align-self: stretch; margin: 0 4px; box-shadow: inset 1px 0 0 var(--sha), inset -1px 0 0 var(--hi); }
 .statusbar {
   flex: none;
   display: flex;
@@ -196,12 +208,12 @@ body.modal #desktop.haswin::after { content: none; }
 
 /* ---------- controls ---------- */
 .btn {
-  font: 11px Tahoma, sans-serif;
+  font: 12px Tahoma, sans-serif;
   color: var(--text);
   background: var(--face);
-  padding: 3px 10px;
-  min-height: 21px;
-  min-width: 50px;
+  padding: 5px 14px;
+  min-height: 28px;
+  min-width: 60px;
   box-shadow: inset -1px -1px 0 0 var(--dk), inset 1px 1px 0 0 var(--hi),
     inset -2px -2px 0 0 var(--sha), inset 2px 2px 0 0 var(--lite);
 }
@@ -209,7 +221,7 @@ body.modal #desktop.haswin::after { content: none; }
 .btn:active, .btn.on {
   box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--dk),
     inset -2px -2px 0 0 var(--lite), inset 2px 2px 0 0 var(--sha);
-  padding: 4px 9px 2px 11px;
+  padding: 6px 13px 4px 15px;
   background: #bdbdbd;
 }
 .btn.def { outline: 1px dotted #000; outline-offset: -5px; border: 1px solid #000; }
@@ -218,15 +230,15 @@ body.modal #desktop.haswin::after { content: none; }
   text-shadow: 1px 1px 0 var(--hi);
   background: var(--face);
 }
-.btn.sm { min-width: 0; min-height: 18px; padding: 1px 6px; }
+.btn.sm { min-width: 0; min-height: 23px; padding: 2px 10px; }
 .btn.ico { min-width: 21px; padding: 2px; }
 
 input[type=text], input[type=password], input[type=number], input[type=search], select, textarea {
-  font: 11px Tahoma, sans-serif;
+  font: 12px Tahoma, sans-serif;
   background: #fff;
   border: none;
-  padding: 3px 4px;
-  min-height: 20px;
+  padding: 4px 5px;
+  min-height: 26px;
   color: var(--text);
   box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--sha),
     inset -2px -2px 0 0 var(--lite), inset 2px 2px 0 0 var(--dk);
@@ -340,11 +352,13 @@ table.grid tr.sel .sub { color: #d6d6ff; }
   background: repeating-linear-gradient(90deg, var(--title-a1) 0 9px, transparent 9px 11px);
 }
 
-/* ---------- tray (в шапке окна) ---------- */
+/* ---------- часы: правая плашка строки состояния основного окна ---------- */
 #tray {
-  display: flex; align-items: center; gap: 6px; padding: 2px 8px;
-  box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--sha), inset -2px -2px 0 0 var(--lite), inset 2px 2px 0 0 var(--dk);
-  min-height: 22px;
+  flex: none;
+  display: flex; align-items: center; gap: 6px; padding: 3px 6px;
+  font: 11px Tahoma, sans-serif;
+  background: var(--face);
+  box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--sha);
 }
 
 /* ---------- dialogs ---------- */
@@ -390,7 +404,7 @@ table.grid tr.sel .sub { color: #d6d6ff; }
 .link { color: #0000ee; text-decoration: underline; cursor: default; }
 .link:hover { color: #ee0000; }
 .pager { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; }
-.pager .pg { min-width: 20px; padding: 2px 5px; text-align: center; background: var(--face); box-shadow: inset -1px -1px 0 0 var(--dk), inset 1px 1px 0 0 var(--hi), inset -2px -2px 0 0 var(--sha), inset 2px 2px 0 0 var(--lite); }
+.pager .pg { min-width: 28px; padding: 4px 9px; font: 12px Tahoma, sans-serif; text-align: center; background: var(--face); box-shadow: inset -1px -1px 0 0 var(--dk), inset 1px 1px 0 0 var(--hi), inset -2px -2px 0 0 var(--sha), inset 2px 2px 0 0 var(--lite); }
 .pager .pg.on { font-weight: bold; box-shadow: inset -1px -1px 0 0 var(--hi), inset 1px 1px 0 0 var(--dk), inset -2px -2px 0 0 var(--lite), inset 2px 2px 0 0 var(--sha); }
 .pager .gap { color: var(--sha); padding: 0 2px; }
 .empty { padding: 24px; text-align: center; color: var(--gray-text); }

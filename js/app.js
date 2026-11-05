@@ -285,7 +285,7 @@
         '</div></div>' +
         '<div class="mut" style="margin-top:5px">' + esc(s.name) + ' (' + esc(code) + ') · ' + revCount(r.count) +
         (mine ? ' · ваша оценка ' + mine.stars + '★' + (mine.text ? ' с комментарием' : '') : ' · вы ещё не оценивали') + '</div></div>' +
-        '<div class="toolbar"><b>Отзывы</b><span class="spacer"></span>' +
+        '<div class="toolbar" data-btnrow><b>Отзывы</b><span class="spacer"></span>' +
         (mine ? '<button class="btn sm" data-a="clear">Убрать мою оценку</button>' : '') + '</div>' +
         '<div class="revs in">' + (r.list.length ? r.list.map(rvHtml).join('')
           : '<div class="empty">Отзывов пока нет — кликните по звезде выше.</div>') + '</div>';
@@ -293,6 +293,7 @@
       const c = w.body.querySelector('[data-a="clear"]');
       if (c) c.addEventListener('click', () => { delete state.rates[code]; save(); paint(w); refreshAll(); });
       w.setStatus(revCount(r.count), 'средняя ' + fmtAvg(r.avg));
+      w.closeBtn();
     };
     paint(Shell.openWindow({ id: 'rev-' + code, title: 'Отзывы — ' + s.name, icon: 'star', w: 620, h: 460 }));
   }
@@ -384,12 +385,12 @@
           o.pos.map((p) => '<tr><td><b>' + esc(p.art) + '</b></td><td>' + esc(p.name) + '</td><td class="sub">' + esc(p.size || '—') + '</td>' +
             '<td class="ctr">' + p.qty + '</td><td class="num">' + money(p.price) + '</td><td class="num">' + money(p.qty * p.price) + '</td></tr>').join('') +
           '</tbody></table></div></fieldset>' +
-          '<div class="row" style="margin-top:8px"><button class="btn" data-a="status">Изменить статус</button>' +
-          '<button class="btn" data-a="print">' + ico('notepad', 14) + ' Распечатать накладную</button>' +
-          '<span class="spacer"></span><span class="mut">Итог по позициям: ' + money(o.pos.reduce((a, p) => a + p.qty * p.price, 0)) + '</span></div>' +
+          '<div class="row" data-btnrow style="margin-top:8px"><button class="btn" data-a="status">Изменить статус</button>' +
+          '<button class="btn" data-a="print">' + ico('notepad', 14) + ' Распечатать накладную</button></div>' +
           '</div>';
         w.body.querySelector('[data-a="status"]').addEventListener('click', () => editOrderStatus(o, api));
         w.body.querySelector('[data-a="print"]').addEventListener('click', () => Shell.alert('Накладная ' + o.id + ' отправлена на печать.\nПринтер: HP LaserJet 1100', 'Печать'));
+        w.setStatus('Готово', 'Итог по позициям: ' + money(o.pos.reduce((a, p) => a + p.qty * p.price, 0)));
       }
     });
   }
@@ -447,9 +448,10 @@
             '<span class="spacer"></span><b class="money">' + money(lines.reduce((a, l) => a + l.qty * l.price, 0)) + '</b></div></fieldset>' +
             '<div class="row"><span class="mut" style="width:110px">Комментарий:</span>' +
             '<input data-k="comment" style="flex:1" placeholder="Например: микс размеров, отправка после проверки"></div>' +
-            '<div class="row" style="margin-top:6px"><button class="btn def" data-a="ok">Оформить заказ</button>' +
-            '<button class="btn" data-a="cancel">Отмена</button>' +
-            '<span class="spacer"></span><span class="mut">Баланс: ' + money(state.balance.current) + '</span></div></div>';
+            '<div class="row" data-btnrow style="margin-top:6px"><button class="btn def" data-a="ok">Оформить заказ</button>' +
+            '<button class="btn" data-a="cancel">Отмена</button></div></div>';
+          w.setStatus('Готово', 'Баланс: ' + money(state.balance.current));
+          w.closeBtn();
 
           $all(w.body, 'input[data-i]').forEach((inp) => inp.addEventListener('input', () => {
             const l = lines[+inp.dataset.i];
@@ -533,9 +535,9 @@
           ['Комментарий точки', supBy(c.sup).note]].map((r) =>
             '<tr><td style="width:150px" class="mut">' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>').join('') +
           '</tbody></table></div>' +
-          '<div class="row"><button class="btn def" data-a="join">Вступить</button>' +
-          '<button class="btn" data-a="leave">Выйти из сбора</button>' +
-          '<span class="spacer"></span><span class="mut">Баланс: ' + money(state.balance.current) + '</span></div></div>';
+          '<div class="row" data-btnrow><button class="btn def" data-a="join">Вступить</button>' +
+          '<button class="btn" data-a="leave">Выйти из сбора</button></div></div>';
+        w.setStatus('Готово', 'Баланс: ' + money(state.balance.current));
         w.body.querySelector('[data-a="join"]').addEventListener('click', () => joinCollection(c, api));
         w.body.querySelector('[data-a="leave"]').addEventListener('click', () => Shell.confirm('Выйти из сбора ' + c.id + '?', 'Выход').then((y) => {
           if (!y) return; Shell.close('coll-' + c.id); Shell.alert('Вы вышли из сбора. Бронь снята.', 'Готово');
@@ -675,7 +677,7 @@
 
     $all(api.body, 'tr[data-h]').forEach((tr) => tr.addEventListener('dblclick', () => {
       const h = D.help[+tr.dataset.h];
-      Shell.openWindow({ id: 'help-' + tr.dataset.h, title: h.t, icon: 'help', w: 520, h: 300, render(w) {
+      Shell.openWindow({ id: 'help-' + tr.dataset.h, title: h.t, icon: 'help', w: 520, h: 178, render(w) {
         w.body.innerHTML = '<div class="pad col"><b>' + esc(h.t) + '</b><div style="line-height:1.6">' + esc(h.d) +
           '\n\nРаздел доступен из меню «Сборы» и «Заказы». Если что-то не сходится — напишите посреднику в группе, ' +
           'он подтвердит статус заказа и проведёт оплату вручную.</div></div>';
@@ -723,56 +725,41 @@
 
   /* ---------------- main window ---------------- */
   const VIEWS = {
-    sellers: { title: 'Поставщики', icon: 'users', render: viewSellers },
-    orders: { title: 'Заказы', icon: 'cart', render: viewOrders },
-    collections: { title: 'Сборы', icon: 'box', render: viewCollections },
-    goods: { title: 'Товары', icon: 'tag', render: viewGoods },
-    balance: { title: 'Баланс', icon: 'wallet', render: viewBalance },
-    help: { title: 'Помощь', icon: 'help', render: viewHelp },
-    login: { title: 'Вход', icon: 'key', render: viewLogin }
+    sellers: { title: 'Поставщики', render: viewSellers },
+    orders: { title: 'Заказы', render: viewOrders },
+    collections: { title: 'Сборы', render: viewCollections },
+    goods: { title: 'Товары', render: viewGoods },
+    balance: { title: 'Баланс', render: viewBalance },
+    help: { title: 'Помощь', render: viewHelp },
+    login: { title: 'Вход', render: viewLogin }
   };
 
   const MAIN = 'main';
-  function menuFor() {
-    return [
-      { label: '&Поставщики', items: [
-        { label: 'Все поставщики', icon: 'users', action: () => go('sellers') },
-        { label: 'Избранные', icon: 'star', action: () => { state.filters.sellers.list = 'fav'; go('sellers'); } },
-        { label: 'Чёрный список', icon: 'stop', action: () => { state.filters.sellers.list = 'black'; go('sellers'); } }, '-',
-        { label: 'Закрыть окно', action: () => Shell.close(MAIN) }
-      ] },
-      { label: '&Заказы', items: [
-        { label: 'Мои заказы', icon: 'cart', action: () => go('orders') },
-        { label: 'Создать заказ', icon: 'save', action: () => { go('orders'); setTimeout(() => newOrderWizard(Shell.getWin(MAIN)), 30); } }
-      ] },
-      { label: '&Сборы', items: D.collectionTabs.map((t) => ({ label: t, icon: 'box', action: () => { state.collTab = t; go('collections'); } })) },
-      { label: '&Товары', action: () => go('goods') },
-      { label: '&Баланс', action: () => go('balance') },
-      { label: '&Помощь', items: [
-        { label: 'Разделы помощи', icon: 'help', action: () => go('help') },
-        { label: 'О программе', icon: 'info', action: openAbout }
-      ] },
-      { label: state.logged ? '&Выход' : '&Вход', action: () => {
-          if (state.logged) { state.logged = false; save(); refreshAll(); Shell.alert('Вы вышли из кабинета.', 'Выход'); }
-          else go('login');
-        } }
-    ];
-  }
 
+  // Единственное меню кабинета: ровная строка кнопок без иконок.
+  // Вложенные команды («Избранные», «Чёрный список», вкладки сборов, «Создать заказ») живут
+  // в самих разделах, отдельное выпадающее меню для них не нужно.
   function toolbarFor() {
-    return ['sellers', 'orders', 'collections', 'goods', 'balance', 'help'].map((k) =>
-      '<button class="btn sm' + (state.view === k ? ' on' : '') + '" data-v="' + k + '">' + ico(VIEWS[k].icon, 14) + ' ' + VIEWS[k].title + '</button>').join('') +
-      '<span class="tb-sep" style="width:2px; align-self:stretch; box-shadow:inset 1px 0 0 var(--sha), inset -1px 0 0 var(--hi)"></span>' +
-      '<button class="btn sm' + (state.view === 'login' ? ' on' : '') + '" data-v="login">' + ico(state.logged ? 'user' : 'key', 14) + ' ' +
-      (state.logged ? esc(D.user.name) : 'Вход') + '</button>' +
+    const item = (k) => '<button class="btn nav' + (state.view === k ? ' on' : '') + '" data-v="' + k + '">' + esc(VIEWS[k].title) + '</button>';
+    return ['sellers', 'orders', 'collections', 'goods', 'balance', 'help'].map(item).join('') +
+      '<span class="msep"></span>' +
+      '<button class="btn nav' + (state.view === 'login' ? ' on' : '') + '" data-v="login">' + (state.logged ? esc(D.user.name) : 'Вход') + '</button>' +
+      '<button class="btn nav" data-a="about">О программе</button>' +
+      (state.logged ? '<button class="btn nav" data-a="exit">Выход</button>' : '') +
       '<span class="spacer"></span><span class="mut">Баланс: <b>' + money(state.balance.current) + '</b></span>';
   }
 
   function mount(api, view) {
     state.view = view;
-    api.menu(menuFor());
     api.toolbar(toolbarFor());
     $all(api.el, '[data-v]').forEach((b) => b.onclick = () => go(b.dataset.v));
+    const ab = api.el.querySelector('[data-a="about"]');
+    if (ab) ab.onclick = openAbout;
+    const ex = api.el.querySelector('[data-a="exit"]');
+    if (ex) ex.onclick = () => {
+      state.logged = false; save(); refreshAll();
+      Shell.alert('Вы вышли из кабинета.', 'Выход');
+    };
     VIEWS[view].render(api);
   }
 
@@ -782,7 +769,7 @@
     if (!api) {
       api = Shell.openWindow({
         id: MAIN, title: 'Садовод-посредник — ' + VIEWS[view].title, icon: 'globe',
-        chrome: false, menu: menuFor(), toolbar: toolbarFor(), status: 'Готово'
+        chrome: false, toolbar: toolbarFor(), status: 'Готово'
       });
       mount(api, view);
       return;
@@ -805,7 +792,7 @@
           'Демонстрация интерфейса в стиле Windows 98: база поставщиков рынков «Садовод», «Люблино», «Южные ворота», ' +
           'заказы, сборы и баланс.<br><br>Данные локальные, ничего не отправляется в сеть.' +
           '<div class="hr"></div><span class="mut">ОК — закрыть окно</span></div></div>' +
-          '<div class="acts" style="display:flex;justify-content:center;padding-bottom:10px"><button class="btn def" data-x>OK</button></div>';
+          '<div class="acts" data-btnrow style="display:flex;justify-content:center;padding-bottom:10px"><button class="btn def" data-x>OK</button></div>';
         w.body.querySelector('[data-x]').addEventListener('click', () => Shell.close('about'));
       }
     });
@@ -855,10 +842,9 @@
         '<div class="grid-wrap in" style="flex:1;margin:0 8px 8px"><table class="grid"><thead><tr><th>Артикул</th><th>Наименование</th><th>Размеры</th><th class="ctr">Остаток</th><th class="num">Цена</th></tr></thead><tbody>' +
         (goods.length ? goods.map((g) => '<tr><td><b>' + esc(g.art) + '</b></td><td>' + esc(g.name) + '</td><td class="sub">' + esc(g.sizes || '—') + '</td><td class="ctr">' + g.qty + '</td><td class="num">' + money(g.price) + '</td></tr>').join('')
           : '<tr><td colspan="5" class="empty">Товары этой точки не выгружены.</td></tr>') + '</tbody></table></div>' +
-        '<div class="toolbar"><button class="btn def" data-a="order">Заказать</button>' +
+        '<div class="toolbar" data-btnrow><button class="btn def" data-a="order">Заказать</button>' +
         '<button class="btn" data-a="star">' + (state.fav.includes(code) ? 'Убрать из избранного' : 'В избранное') + '</button>' +
-        '<button class="btn" data-a="black">' + (state.black.includes(code) ? 'Убрать из ЧС' : 'В чёрный список') + '</button>' +
-        '<span class="spacer"></span><span class="mut">Добавлен в базу: ' + dt(s.added) + '</span></div>';
+        '<button class="btn" data-a="black">' + (state.black.includes(code) ? 'Убрать из ЧС' : 'В чёрный список') + '</button></div>';
       bindRatingUi(w, () => { paint(w); refreshAll(); });
       w.body.querySelector('[data-a="order"]').addEventListener('click', () => { Shell.close('sup-' + code); go('orders'); setTimeout(() => newOrderWizard(w), 40); });
       w.body.querySelector('[data-a="star"]').addEventListener('click', () => { toggleList(code); paint(w); });
@@ -866,6 +852,8 @@
         state.black = state.black.includes(code) ? state.black.filter((c) => c !== code) : state.black.concat(code);
         state.fav = state.fav.filter((c) => c !== code); save(); Shell.close('sup-' + code); refreshAll();
       });
+      w.setStatus('Готово', 'Добавлен в базу: ' + dt(s.added));
+      w.closeBtn();
     };
     paint(Shell.openWindow({ id: 'sup-' + code, title: s.code + ' — ' + s.name, icon: 'users', w: 560, h: 420 }));
   }

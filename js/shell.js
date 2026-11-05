@@ -42,13 +42,15 @@ window.Shell = (function () {
       el.style.height = h + 'px';
     }
 
-    // В шапке основного окна вместо кнопок — системные часы с тем же утопленным фоном.
     const right = chrome
       ? '<span class="t-btns">' +
       '<button class="tbtn" data-a="max" title="Развернуть" aria-label="Развернуть">&#9633;</button>' +
       '<button class="tbtn" data-a="close" title="Закрыть" aria-label="Закрыть">&#10005;</button>' +
       '</span>'
-      : '<div id="tray">' + ico('network', 14) + ico('clock', 14) + '<span id="clock"></span></div>';
+      : '';
+
+    // Часы живут в правом конце строки состояния основного окна, а не в шапке.
+    const tray = '<div id="tray">' + ico('network', 14) + ico('clock', 14) + '<span id="clock"></span></div>';
 
     el.innerHTML =
       '<div class="titlebar">' +
@@ -58,10 +60,12 @@ window.Shell = (function () {
       (cfg.menu ? '<div class="menubar" data-menu></div>' : '') +
       (cfg.toolbar ? '<div class="toolbar" data-toolbar></div>' : '') +
       '<div class="win-body" data-body></div>' +
-      (cfg.status !== false ? '<div class="statusbar" data-status><span class="cell panel grow">' + esc(cfg.status || 'Готово') + '</span><span class="cell panel" data-status2>' + esc(cfg.status2 || '') + '</span></div>' : '') +
+      (cfg.status !== false ? '<div class="statusbar" data-status><span class="cell panel grow">' + esc(cfg.status || 'Готово') + '</span><span class="cell panel" data-status2>' + esc(cfg.status2 || '') + '</span>' + (chrome ? '' : tray) + '</div>' : '') +
       (chrome ? '<div class="grip" data-grip style="position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:se-resize"></div>' : '');
 
     desk().appendChild(el);
+
+    const tryClose = () => { (cfg.onClose ? cfg.onClose(id) : true) !== false && close(id); };
 
     const api = {
       id, el,
@@ -78,7 +82,30 @@ window.Shell = (function () {
       maximize(on) { toggleMax(id, on); },
       menu(items) { buildMenu(el.querySelector('[data-menu]'), items); },
       toolbar(html) { const t = el.querySelector('[data-toolbar]'); if (t) { t.innerHTML = html; } },
-      status2(html) { const s = el.querySelector('[data-status2]'); if (s) s.innerHTML = html; }
+      status2(html) { const s = el.querySelector('[data-status2]'); if (s) s.innerHTML = html; },
+      // Кнопка «Закрыть» становится в правый конец строки с остальными кнопками окна (data-btnrow).
+      // Своих кнопок нет — ставим её по центру отдельной строкой. Перерисовка тела её стирает,
+      // поэтому вьюхи с paint() вызывают closeBtn() в конце своей отрисовки.
+      closeBtn() {
+        if (!chrome) return;
+        const bind = (bar, html) => {
+          bar.insertAdjacentHTML('beforeend', html);
+          const btn = bar.querySelector('[data-a="wclose"]');
+          if (btn) btn.addEventListener('click', tryClose);
+        };
+        let bar = el.querySelector('.win-body [data-btnrow]');
+        if (!bar) {
+          const bars = el.querySelectorAll('.win-body .toolbar');
+          bar = bars[bars.length - 1];
+        }
+        if (bar) {
+          if (bar.querySelector('[data-a="wclose"]')) return;
+          if (!bar.querySelector('.spacer')) bind(bar, '<span class="spacer"></span>');
+          bind(bar, '<button class="btn" data-a="wclose">Закрыть</button>');
+          return;
+        }
+        bind(api.body, '<div class="toolbar mid" data-btnrow><button class="btn" data-a="wclose">Закрыть</button></div>');
+      }
     };
 
     const rec = { id, el, api, cfg, max: false, restore: null, static: !chrome };
@@ -94,7 +121,7 @@ window.Shell = (function () {
       el.querySelectorAll('.tbtn').forEach((b) => b.addEventListener('click', (e) => {
         e.stopPropagation();
         const a = b.dataset.a;
-        if (a === 'close') { (cfg.onClose ? cfg.onClose(id) : true) !== false && close(id); }
+        if (a === 'close') tryClose();
         if (a === 'max') toggleMax(id);
       }));
     }
@@ -103,6 +130,7 @@ window.Shell = (function () {
     if (cfg.toolbar && typeof cfg.toolbar === 'string') api.toolbar(cfg.toolbar);
     syncVeil();
     if (cfg.render) cfg.render(api);
+    api.closeBtn();
 
     focus(id);
     return api;
