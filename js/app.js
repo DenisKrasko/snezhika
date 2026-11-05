@@ -28,7 +28,7 @@
   function save() {
     try {
       localStorage.setItem(LS, JSON.stringify({
-        logged: state.logged, fav: state.fav, black: state.black,
+        rev: D.rev, logged: state.logged, fav: state.fav, black: state.black,
         orders: state.orders, collections: state.collections, balance: state.balance, votes: state.votes
       }));
     } catch (e) { /* приватный режим — работаем в памяти */ }
@@ -38,6 +38,8 @@
       const raw = localStorage.getItem(LS);
       if (!raw) return;
       const s = JSON.parse(raw);
+      /* данные в seed.js обновились — берём новый сид, избранное и заметки пользователя оставляем */
+      if (s.rev !== D.rev) { save(); return; }
       Object.assign(state, s);
     } catch (e) { /* ignore */ }
   }
