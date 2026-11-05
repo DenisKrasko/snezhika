@@ -94,6 +94,10 @@ body {
 .win.static .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
 .win.static #tray { flex: none; min-height: 0; padding: 1px 6px; gap: 5px; }
 .win.active .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
+/* Модальный диалог активен, а всё, что под затемнением, уходит в неактивный вид. */
+.dlg .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
+body.modal .win .titlebar { background: linear-gradient(90deg, var(--title-i), #b5b5b5); }
+body.modal .win .tbtn { color: #808080; }
 .titlebar {
   height: 20px;
   display: flex;
@@ -336,6 +340,12 @@ table.grid tr.sel .sub { color: #d6d6ff; }
 /* ---------- dialogs ---------- */
 #modal { position: absolute; inset: 0; display: none; z-index: 6000; }
 #modal.show { display: block; }
+/* «Серая» маска Win98: точечная сетка, а не сплошная полупрозрачность. */
+#modal.show::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-conic-gradient(#fff 0 25%, #808080 0 50%) 0 0 / 2px 2px;
+  opacity: .35;
+}
 .dlg {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   background: var(--face); padding: 3px; min-width: 300px; max-width: 92%;

@@ -236,6 +236,8 @@ window.Shell = (function () {
     return new Promise((resolve) => {
       const m = document.getElementById('modal');
       m.classList.add('show');
+      // Пока открыт модальный диалог, все окна под затемнением — неактивные (серые шапки), как в Win98.
+      document.body.classList.add('modal');
       const box = document.createElement('div');
       box.className = 'dlg';
       const icon = cfg.icon ? '<div style="flex:none">' + ico(cfg.icon, 32) + '</div>' : '';
@@ -251,7 +253,9 @@ window.Shell = (function () {
       m.appendChild(box);
       const done = (v) => {
         lastForm = cfg.form ? box : null;
-        box.remove(); if (!m.children.length) m.classList.remove('show'); resolve(v);
+        box.remove();
+        if (!m.children.length) { m.classList.remove('show'); document.body.classList.remove('modal'); }
+        resolve(v);
       };
       box.querySelectorAll('[data-b]').forEach((b) => b.addEventListener('click', () => done(b.dataset.b)));
       box.querySelector('[data-x]').addEventListener('click', () => done(null));
