@@ -15,6 +15,8 @@
   --sel: #000080;
   --text: #000000;
   --gray-text: #6d6d6d;
+  /* «Серая» маска Win98: точечная сетка вместо сплошной полупрозрачности. */
+  --gray-veil: repeating-conic-gradient(#fff 0 25%, #808080 0 50%) 0 0 / 2px 2px;
 }
 
 * { box-sizing: border-box; }
@@ -98,6 +100,14 @@ body {
 .dlg .titlebar { background: linear-gradient(90deg, var(--title-a1), var(--title-a2)); }
 body.modal .win .titlebar { background: linear-gradient(90deg, var(--title-i), #b5b5b5); }
 body.modal .win .tbtn { color: #808080; }
+/* Пока открыто всплывающее окно, основное окно неактивно и недоступно: клики уходят в маску. */
+#desktop.haswin .win.static { pointer-events: none; }
+#desktop.haswin .win.static .titlebar { background: linear-gradient(90deg, var(--title-i), #b5b5b5); }
+#desktop.haswin::after {
+  content: ''; position: absolute; inset: 0; z-index: 10;
+  background: var(--gray-veil); opacity: .35;
+}
+body.modal #desktop.haswin::after { content: none; }
 .titlebar {
   height: 20px;
   display: flex;
@@ -341,11 +351,7 @@ table.grid tr.sel .sub { color: #d6d6ff; }
 #modal { position: absolute; inset: 0; display: none; z-index: 6000; }
 #modal.show { display: block; }
 /* «Серая» маска Win98: точечная сетка, а не сплошная полупрозрачность. */
-#modal.show::before {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-conic-gradient(#fff 0 25%, #808080 0 50%) 0 0 / 2px 2px;
-  opacity: .35;
-}
+#modal.show::before { content: ''; position: absolute; inset: 0; background: var(--gray-veil); opacity: .35; }
 .dlg {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   background: var(--face); padding: 3px; min-width: 300px; max-width: 92%;

@@ -101,6 +101,7 @@ window.Shell = (function () {
 
     if (cfg.menu) api.menu(cfg.menu);
     if (cfg.toolbar && typeof cfg.toolbar === 'string') api.toolbar(cfg.toolbar);
+    syncVeil();
     if (cfg.render) cfg.render(api);
 
     focus(id);
@@ -115,6 +116,7 @@ window.Shell = (function () {
     if (focused === id) focused = null;
     const rest = [...wins.values()].filter((x) => !x.static);
     if (rest.length) focus(rest[rest.length - 1].id);
+    syncVeil();
   }
 
   function focus(id) {
@@ -124,6 +126,11 @@ window.Shell = (function () {
     r.el.classList.add('active');
     r.el.style.zIndex = ++zTop;
     focused = id;
+  }
+
+  // Пока открыто хоть одно всплывающее окно, основное окно под точечной маской и без кликов.
+  function syncVeil() {
+    desk().classList.toggle('haswin', [...wins.values()].some((x) => !x.static));
   }
 
   function toggleMax(id, force) {
